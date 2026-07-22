@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import { Outlet, NavLink, useNavigate, Navigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { getCurrentTeacher, isManagement, isAdmin } from "@/lib/dutyUtils";
 import { Menu, X, Bell, Calendar, Users, Settings, ClipboardList, BarChart3, AlertTriangle, Repeat, Home as HomeIcon, ShieldCheck, Moon, Sun } from "lucide-react";
@@ -55,6 +55,11 @@ export default function Layout() {
         </div>
       </div>
     );
+  }
+
+  // קליטה ראשונית חובה — למעט מנהל מערכת
+  if (!teacher.onboarding_completed && teacher.role !== "admin") {
+    return <Navigate to="/onboarding" replace />;
   }
 
   const management = isManagement(teacher);

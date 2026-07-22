@@ -19,7 +19,8 @@
       "type": "string",
       "enum": [
         "middle",
-        "high"
+        "high",
+        "both"
       ],
       "title": "\u05d7\u05d8\u05d9\u05d1\u05d4",
       "default": "high"
@@ -27,6 +28,14 @@
     "subject": {
       "type": "string",
       "title": "\u05de\u05e7\u05e6\u05d5\u05e2"
+    },
+    "additional_subjects": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "\u05de\u05e7\u05e6\u05d5\u05e2\u05d5\u05ea \u05e0\u05d5\u05e1\u05e4\u05d9\u05dd",
+      "default": []
     },
     "role": {
       "type": "string",
@@ -45,6 +54,14 @@
       "title": "\u05de\u05d7\u05e0\u05da",
       "default": false
     },
+    "homeroom_grade": {
+      "type": "string",
+      "title": "\u05e9\u05db\u05d1\u05d4"
+    },
+    "homeroom_class": {
+      "type": "string",
+      "title": "\u05db\u05d9\u05ea\u05d4"
+    },
     "is_sport_teacher": {
       "type": "boolean",
       "title": "\u05de\u05d5\u05e8\u05d4 \u05dc\u05e1\u05e4\u05d5\u05e8\u05d8",
@@ -55,6 +72,21 @@
       "title": "\u05e9\u05e2\u05d5\u05ea \u05d4\u05d5\u05e8\u05d0\u05d4 \u05e9\u05d1\u05d5\u05e2\u05d9\u05d5\u05ea",
       "default": 0
     },
+    "days_off": {
+      "type": "array",
+      "items": {
+        "type": "number",
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "title": "\u05d9\u05de\u05d9 \u05d7\u05d5\u05e4\u05e9 \u05e7\u05d1\u05d5\u05e2\u05d9\u05dd",
+      "default": []
+    },
     "is_active": {
       "type": "boolean",
       "title": "\u05e4\u05e2\u05d9\u05dc",
@@ -64,6 +96,27 @@
       "type": "boolean",
       "title": "\u05e4\u05d8\u05d5\u05e8 \u05de\u05ea\u05d5\u05e8\u05e0\u05d5\u05ea",
       "default": false
+    },
+    "exemption_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "title": "\u05e1\u05d8\u05d8\u05d5\u05e1 \u05d1\u05e7\u05e9\u05ea \u05e4\u05d8\u05d5\u05e8",
+      "default": "none"
+    },
+    "onboarding_completed": {
+      "type": "boolean",
+      "title": "\u05d4\u05e9\u05dc\u05d9\u05dd \u05e7\u05dc\u05d9\u05d8\u05d4",
+      "default": false
+    },
+    "onboarding_step": {
+      "type": "number",
+      "title": "\u05e9\u05dc\u05d1 \u05e7\u05dc\u05d9\u05d8\u05d4",
+      "default": 0
     },
     "preferences": {
       "type": "string",

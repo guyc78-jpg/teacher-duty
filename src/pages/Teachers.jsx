@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import ScheduleImportButton from "@/components/teachers/ScheduleImportButton";
+import PendingApprovals from "@/components/teachers/PendingApprovals";
 import TeacherScheduleSection from "@/components/teachers/TeacherScheduleSection";
 
 export default function Teachers() {
@@ -46,6 +47,8 @@ export default function Teachers() {
           </Button>
         </div>
       </div>
+
+      <PendingApprovals onChanged={load} />
 
       <div className="relative">
         <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

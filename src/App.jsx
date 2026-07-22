@@ -22,6 +22,7 @@ import AdminDashboard from '@/pages/AdminDashboard';
 import Teachers from '@/pages/Teachers';
 import ScheduleEditor from '@/pages/ScheduleEditor';
 import SettingsPage from '@/pages/SettingsPage';
+import Onboarding from '@/pages/Onboarding';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -55,6 +56,7 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+        <Route path="/onboarding" element={<Onboarding />} />
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
           <Route path="/my-duties" element={<MyDuties />} />

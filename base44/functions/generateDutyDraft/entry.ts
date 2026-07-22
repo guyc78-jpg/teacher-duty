@@ -191,6 +191,8 @@ function findBestCandidate({ teachers, schedules, absences, dateStr, dow, brk, s
   let candidates = teachers.filter(t => {
     // עמדות מותרות
     if (t.allowed_stations?.length > 0 && !t.allowed_stations.includes(station.id)) return false;
+    // יום חופש קבוע
+    if (t.days_off?.includes(dow)) return false;
     // היעדרות
     const absent = absences.some(a => a.teacher_id === t.id && dateStr >= a.start_date && dateStr <= a.end_date);
     if (absent) return false;
