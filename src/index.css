@@ -122,6 +122,10 @@
     -ms-overflow-style: none;
   }
 
+  html, body {
+    overflow-x: hidden;
+  }
+
   html::-webkit-scrollbar,
   body::-webkit-scrollbar,
   .mobile-compact *::-webkit-scrollbar {
@@ -131,6 +135,11 @@
   .mobile-compact main h1 {
     font-size: 1.125rem !important;
     line-height: 1.5rem !important;
+  }
+
+  .mobile-compact main .teacher-dashboard h1.dashboard-greeting {
+    font-size: 1.75rem !important;
+    line-height: 2rem !important;
   }
 
   .mobile-compact main h2 {

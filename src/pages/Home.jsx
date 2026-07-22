@@ -4,11 +4,22 @@ import { base44 } from "@/api/base44Client";
 import { getCurrentTeacher, formatDateWithDay, formatTimeRange, todayISO, isSchoolDay, BREAK_TYPES, STATUS_LABELS, HEBREW_DAYS, HEBREW_MONTHS } from "@/lib/dutyUtils";
 import { CheckCircle, Clock, MapPin, Calendar, AlertTriangle, Repeat, Bell } from "lucide-react";
 
+function getCountdownLabel(assignment, now) {
+  if (!assignment?.date || !assignment?.start_time) return "";
+  const target = new Date(`${assignment.date}T${assignment.start_time}:00`).getTime();
+  const minutes = Math.max(0, Math.ceil((target - now) / 60000));
+  if (minutes < 60) return `עוד ${minutes} דקות`;
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  return remainder ? `עוד ${hours} שעות ו־${remainder} דקות` : `עוד ${hours} שעות`;
+}
+
 export default function Home() {
   const [teacher, setTeacher] = useState(null);
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(null);
+  const [currentTime, setCurrentTime] = useState(Date.now());
 
   const load = useCallback(async () => {
     const t = await getCurrentTeacher();
@@ -22,6 +33,11 @@ export default function Home() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setCurrentTime(Date.now()), 30000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const unsub = base44.entities.Assignment.subscribe(() => load());
@@ -68,56 +84,59 @@ export default function Home() {
   }
 
   return (
-    <div className="space-y-5 pb-4">
-      <div>
-        <h1 className="text-2xl font-bold">שלום, {teacher.full_name}</h1>
-        <p className="text-sm text-muted-foreground mt-1">{formatDateWithDay(today)}</p>
+    <div className="teacher-dashboard min-h-[calc(100vh-3rem)] space-y-4 bg-muted/30 py-3 pb-5 sm:py-4 lg:py-6">
+      <div className="pt-1">
+        <h1 className="dashboard-greeting text-2xl font-extrabold tracking-tight">שלום, {teacher.full_name}</h1>
+        <p className="mt-0.5 text-sm text-foreground/70">{formatDateWithDay(today)}</p>
       </div>
 
       {/* Next duty - prominent */}
       {nextDuty ? (
-        <div className="rounded-2xl bg-primary text-primary-foreground p-5 shadow-lg">
-          <p className="text-sm opacity-80 mb-1">התורנות הבאה</p>
-          <div className="flex items-center gap-2 mb-3">
-            <Calendar className="w-5 h-5" />
-            <span className="font-bold text-lg">{formatDateWithDay(nextDuty.date)}</span>
-          </div>
-          <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-1.5">
-              <Clock className="w-4 h-4 opacity-80" />
-              <span>{formatTimeRange(nextDuty.start_time, nextDuty.end_time)}</span>
+        <section className="overflow-hidden rounded-xl border border-border border-r-4 border-r-primary bg-card p-4 shadow-md sm:p-5">
+          <p className="text-sm font-medium text-foreground/75">התורנות הבאה</p>
+          <div className="mt-1 flex items-end justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-5xl font-medium leading-none tracking-tight text-foreground" dir="ltr">{nextDuty.start_time}</p>
+              <div className="mt-3 flex items-center gap-2">
+                <MapPin className="h-4 w-4 shrink-0 text-primary" />
+                <p className="truncate text-xl font-extrabold">{nextDuty.station_name}</p>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5">
-              <MapPin className="w-4 h-4 opacity-80" />
-              <span>{nextDuty.station_name}</span>
-            </div>
-            <span className="px-2 py-0.5 rounded-full bg-white/20 text-sm">
-              {BREAK_TYPES[nextDuty.break_type]?.label}
+            <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+              {getCountdownLabel(nextDuty, currentTime)}
             </span>
           </div>
-          {nextDuty.date === today && nextDuty.status === "scheduled" && (
-            <Button
-              onClick={() => confirmArrival(nextDuty)}
-              disabled={confirming === nextDuty.id}
-              className="mt-4 w-full bg-white text-primary hover:bg-white/90 font-semibold h-11"
-            >
-              {confirming === nextDuty.id ? (
-                <><div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin ml-2" /> מאשר...</>
-              ) : (
-                <><CheckCircle className="w-5 h-5 ml-2" /> אישור הגעה</>
-              )}
-            </Button>
-          )}
-          {nextDuty.status === "confirmed" && (
-            <div className="mt-4 flex items-center gap-2 bg-white/20 rounded-lg px-3 py-2 text-sm">
-              <CheckCircle className="w-4 h-4" /> הגעה אושרה
+          <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-3">
+            <div className="text-xs text-muted-foreground">
+              <span>{formatTimeRange(nextDuty.start_time, nextDuty.end_time)}</span>
+              <span className="mx-1.5">·</span>
+              <span>{BREAK_TYPES[nextDuty.break_type]?.label}</span>
             </div>
-          )}
-        </div>
+            {nextDuty.date === today && nextDuty.status === "scheduled" && (
+              <Button
+                onClick={() => confirmArrival(nextDuty)}
+                disabled={confirming === nextDuty.id}
+                className="h-11 shrink-0 rounded-lg px-5 font-semibold shadow-md"
+              >
+                {confirming === nextDuty.id ? "מאשר..." : "אישור הגעה"}
+              </Button>
+            )}
+            {nextDuty.status === "confirmed" && (
+              <div className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg bg-success/10 px-3 text-sm font-semibold text-success">
+                <CheckCircle className="h-4 w-4" /> הגעה אושרה
+              </div>
+            )}
+          </div>
+        </section>
       ) : (
-        <div className="rounded-2xl border border-border p-8 text-center">
-          <Calendar className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
-          <p className="text-muted-foreground">אין תורנויות מתוכננות בקרוב</p>
+        <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-sm">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted">
+            <Calendar className="h-5 w-5 text-muted-foreground" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold">אין תורנויות מתוכננות בקרוב</p>
+            <p className="text-xs text-muted-foreground">הלו״ז שלך פנוי כרגע</p>
+          </div>
         </div>
       )}
 
@@ -134,15 +153,21 @@ export default function Home() {
       )}
 
       {/* Quick actions */}
-      <div className="grid grid-cols-2 gap-3">
-        <QuickAction to="/my-duties" icon={Calendar} label="התורנויות שלי" />
-        <QuickAction to="/swaps" icon={Repeat} label="החלפות" />
-        <QuickAction to="/incidents" icon={AlertTriangle} label="דיווח אירוע" />
-        <QuickAction to="/notifications" icon={Bell} label="התראות" />
-      </div>
+      <section>
+        <h2 className="mb-2 text-base font-extrabold">פעולות מהירות</h2>
+        <div className="grid grid-cols-4 gap-2">
+          <QuickAction to="/my-duties" icon={Calendar} label="התורנויות שלי" />
+          <QuickAction to="/swaps" icon={Repeat} label="החלפות" />
+          <QuickAction to="/incidents" icon={AlertTriangle} label="דיווח אירוע" />
+          <QuickAction to="/notifications" icon={Bell} label="התראות" />
+        </div>
+      </section>
 
       {/* Compact monthly calendar */}
-      <CompactCalendar assignments={assignments} today={today} />
+      <section>
+        <h2 className="mb-2 text-base font-extrabold">לוח שנה</h2>
+        <CompactCalendar assignments={assignments} today={today} />
+      </section>
     </div>
   );
 }
@@ -176,9 +201,9 @@ function DutyCard({ duty, onConfirm, confirming }) {
 
 function QuickAction({ to, icon: Icon, label }) {
   return (
-    <Link to={to} className="rounded-xl border border-border p-4 bg-card hover:bg-accent transition-colors text-center">
-      <Icon className="w-6 h-6 mx-auto mb-1.5 text-primary" />
-      <span className="text-sm font-medium">{label}</span>
+    <Link to={to} className="flex min-h-[68px] flex-col items-center justify-center rounded-lg border border-border bg-card px-1.5 py-2 text-center shadow-sm transition-colors hover:bg-accent">
+      <Icon className="mb-1 h-4 w-4 text-primary" />
+      <span className="text-[11px] font-medium leading-tight">{label}</span>
     </Link>
   );
 }
@@ -208,8 +233,8 @@ function CompactCalendar({ assignments, today }) {
   const isoToday = today;
 
   return (
-    <div className="rounded-xl border border-border p-3 sm:p-4 bg-card">
-      <div className="flex items-center justify-between mb-2 sm:mb-3">
+    <div className="rounded-xl border border-border bg-card p-2.5 shadow-sm sm:p-4">
+      <div className="mb-1.5 flex items-center justify-between sm:mb-3">
         <button onClick={() => setViewDate(new Date(year, month - 1, 1))} className="p-1 rounded hover:bg-muted">→</button>
         <h3 className="font-bold text-sm">{HEBREW_MONTHS[month]} {year}</h3>
         <button onClick={() => setViewDate(new Date(year, month + 1, 1))} className="p-1 rounded hover:bg-muted">←</button>
@@ -217,9 +242,9 @@ function CompactCalendar({ assignments, today }) {
       <div className="grid grid-cols-5 gap-1 text-center">
         {weekDays.map(d => <div key={d} className="text-xs text-muted-foreground py-1">{d}</div>)}
         {cells.map((cell, i) => (
-          <div key={i} className="h-10 sm:h-auto sm:aspect-square flex items-center justify-center">
+          <div key={i} className="flex h-8 items-center justify-center sm:h-auto sm:aspect-square">
             {cell && (
-              <div className={`w-8 h-8 flex items-center justify-center rounded-full text-xs relative ${
+              <div className={`relative flex h-7 w-7 items-center justify-center rounded-full text-xs ${
                 cell.dateStr === isoToday ? "bg-primary text-primary-foreground font-bold" :
                 dutyDates.has(cell.dateStr) ? "bg-primary/10 text-primary font-medium" :
                 "hover:bg-muted"
