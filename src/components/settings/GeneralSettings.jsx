@@ -58,7 +58,7 @@ export default function GeneralSettings() {
       </div>
       <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-3">
         <div className="min-w-0"><Label htmlFor="pilot-mode" className="text-sm font-semibold">מצב הרצה</Label><p className="mt-1 text-xs leading-5 text-muted-foreground">מגביל את הפעלת המערכת למורי ההרצה שהוגדרו מראש.</p></div>
-        <Switch id="pilot-mode" checked={settings.pilot_mode_enabled} onCheckedChange={value => set("pilot_mode_enabled", value)} className="shrink-0" />
+        <Switch id="pilot-mode" checked={settings.pilot_mode_enabled} aria-checked={settings.pilot_mode_enabled} aria-label="מצב הרצה" onCheckedChange={value => set("pilot_mode_enabled", value)} />
       </div>
       <div aria-live="polite" className="min-h-5 text-sm">
         {dirty && <p className="flex items-center gap-1.5 text-warning"><TriangleAlert className="h-4 w-4" />יש שינויים שלא נשמרו</p>}

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Check, Lock } from "lucide-react";
 import { saveOnboarding } from "@/functions/saveOnboarding";
 import { DEFAULT_PREFS, NOTIF_PREF_LABELS } from "@/components/onboarding/onboardingConstants";
+import { Switch } from "@/components/ui/switch";
 
 function normalizedPreferences(value) {
   let stored = {};
@@ -47,13 +48,11 @@ export default function NotificationPreferences({ teacher }) {
           const active = option.operational || preferences[key];
           return (
             <div key={key} className="flex min-h-12 items-center justify-between gap-3 border-b border-border py-2 last:border-0">
-              <div><p className="text-sm font-medium">{option.label}</p><p className={`text-xs ${active ? "text-success" : "text-muted-foreground"}`}>{active ? "פעיל" : "כבוי"}</p></div>
+              <p className="text-sm font-medium">{option.label}</p>
               {option.operational ? (
-                <span className="flex items-center gap-1.5 rounded-full bg-success/10 px-2.5 py-1 text-xs font-medium text-success"><Lock className="h-3.5 w-3.5" />פעיל תמיד</span>
+                <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-success/20 bg-success/10 px-2.5 py-1 text-xs font-medium text-success"><Lock className="h-3.5 w-3.5" />פעיל תמיד</span>
               ) : (
-                <button role="switch" aria-checked={active} aria-label={`${option.label}: ${active ? "פעיל" : "כבוי"}`} disabled={saveState === "saving"} onClick={() => toggle(key)} className={`relative h-7 w-12 rounded-full transition-colors ${active ? "bg-primary" : "bg-muted"}`}>
-                  <span className={`absolute top-1 h-5 w-5 rounded-full bg-background shadow transition-all ${active ? "right-6" : "right-1"}`} />
-                </button>
+                <Switch checked={active} aria-checked={active} aria-label={`${option.label}: ${active ? "פעיל" : "כבוי"}`} disabled={saveState === "saving"} onCheckedChange={() => toggle(key)} />
               )}
             </div>
           );
