@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
-import { getCurrentTeacher, formatDateWithDay, todayISO, BREAK_TYPES, STATUS_LABELS, isManagement } from "@/lib/dutyUtils";
+import { getCurrentTeacher, formatDateWithDay, formatTimeRange, todayISO, BREAK_TYPES, STATUS_LABELS, isManagement } from "@/lib/dutyUtils";
 import { Users, AlertTriangle, Repeat, Clock, MapPin, CheckCircle, XCircle, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -102,7 +102,7 @@ export default function AdminDashboard() {
                         </div>
                         <p className="text-sm text-muted-foreground">{a.teacher_name}</p>
                         <div className="flex items-center justify-between mt-1">
-                          <span className="text-xs text-muted-foreground">{a.start_time}–{a.end_time}</span>
+                          <span className="text-xs text-muted-foreground">{formatTimeRange(a.start_time, a.end_time)}</span>
                           {arrival?.status === "late" && <span className="text-xs text-warning">איחור</span>}
                         </div>
                       </div>

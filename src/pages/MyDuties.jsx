@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
-import { getCurrentTeacher, formatDateWithDay, todayISO, BREAK_TYPES, STATUS_LABELS, HEBREW_DAYS, schoolDaysInRange, toISODate } from "@/lib/dutyUtils";
+import { getCurrentTeacher, formatDateWithDay, formatTimeRange, todayISO, BREAK_TYPES, STATUS_LABELS, HEBREW_DAYS, schoolDaysInRange, toISODate } from "@/lib/dutyUtils";
 import { Clock, MapPin, Calendar, CheckCircle, Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -112,7 +112,7 @@ export default function MyDuties() {
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <div className="flex items-center gap-2">
                           <Clock className="w-4 h-4 text-muted-foreground" />
-                          <span className="font-medium">{a.start_time}–{a.end_time}</span>
+                          <span className="font-medium">{formatTimeRange(a.start_time, a.end_time)}</span>
                         </div>
                         <span className={`text-xs px-2 py-0.5 rounded-full border ${bt.color}`}>{bt.label}</span>
                       </div>

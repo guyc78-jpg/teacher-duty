@@ -1,6 +1,6 @@
 import { base44 } from "@/api/base44Client";
 
-export const HEBREW_DAYS = ["ראשון", "שני", "שלישי", "שלי", "חמישי", "שישי", "שבת"];
+export const HEBREW_DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
 export const HEBREW_DAYS_SHORT = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
 export const HEBREW_MONTHS = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"];
 
@@ -36,33 +36,57 @@ export const STATUS_LABELS = {
 
 export const DIVISION_LABELS = { middle: "חטיבת ביניים", high: "חטיבה עליונה", both: "שתי החטיבות" };
 
-// פורמט תאריך DD/MM/YYYY
+const JERUSALEM_TIME_ZONE = "Asia/Jerusalem";
+const LTR_ISOLATE = "\u2066";
+const POP_DIRECTIONAL_ISOLATE = "\u2069";
+
+function dateValue(dateStr) {
+  if (dateStr instanceof Date) return dateStr;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr || "")) return new Date(`${dateStr}T12:00:00Z`);
+  return new Date(dateStr);
+}
+
 export function formatDate(dateStr) {
   if (!dateStr) return "";
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  return `${dd}/${mm}/${yyyy}`;
+  const date = dateValue(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+  return new Intl.DateTimeFormat("he-IL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: JERUSALEM_TIME_ZONE
+  }).format(date);
 }
 
 export function formatDateWithDay(dateStr) {
   if (!dateStr) return "";
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  const dayName = HEBREW_DAYS[d.getDay()];
-  return `${dayName}, ${formatDate(dateStr)}`;
+  const date = dateValue(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+  return new Intl.DateTimeFormat("he-IL", {
+    weekday: "long",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: JERUSALEM_TIME_ZONE
+  }).format(date);
 }
 
-// פורמט שעה 24 שעות
 export function formatTime(dateStr) {
   if (!dateStr) return "";
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mm = String(d.getMinutes()).padStart(2, "0");
-  return `${hh}:${mm}`;
+  const date = dateValue(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+  const value = new Intl.DateTimeFormat("he-IL", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone: JERUSALEM_TIME_ZONE
+  }).format(date);
+  return `${LTR_ISOLATE}${value}${POP_DIRECTIONAL_ISOLATE}`;
+}
+
+export function formatTimeRange(start, end) {
+  if (!start || !end) return "";
+  return `${LTR_ISOLATE}${start}–${end}${POP_DIRECTIONAL_ISOLATE}`;
 }
 
 // בדיקה אם יום שישי (אסור לשבץ)

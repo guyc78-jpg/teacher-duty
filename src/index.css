@@ -93,6 +93,12 @@
     direction: rtl;
     -webkit-font-smoothing: antialiased;
   }
+
+  input[type="time"],
+  input[type="date"] {
+    direction: ltr;
+    text-align: left;
+  }
 }
 
 @layer utilities {

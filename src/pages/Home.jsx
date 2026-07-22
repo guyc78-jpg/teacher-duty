@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { getCurrentTeacher, formatDateWithDay, todayISO, BREAK_TYPES, STATUS_LABELS, HEBREW_DAYS, HEBREW_MONTHS } from "@/lib/dutyUtils";
+import { getCurrentTeacher, formatDateWithDay, formatTimeRange, todayISO, BREAK_TYPES, STATUS_LABELS, HEBREW_DAYS, HEBREW_MONTHS } from "@/lib/dutyUtils";
 import { CheckCircle, Clock, MapPin, Calendar, AlertTriangle, Repeat, Bell } from "lucide-react";
 
 export default function Home() {
@@ -85,7 +85,7 @@ export default function Home() {
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-1.5">
               <Clock className="w-4 h-4 opacity-80" />
-              <span>{nextDuty.start_time}–{nextDuty.end_time}</span>
+              <span>{formatTimeRange(nextDuty.start_time, nextDuty.end_time)}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <MapPin className="w-4 h-4 opacity-80" />
@@ -155,7 +155,7 @@ function DutyCard({ duty, onConfirm, confirming }) {
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-2">
           <Clock className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium text-sm">{duty.start_time}–{duty.end_time}</span>
+          <span className="font-medium text-sm">{formatTimeRange(duty.start_time, duty.end_time)}</span>
         </div>
         <span className={`text-xs px-2 py-0.5 rounded-full border ${bt.color}`}>{bt.label}</span>
       </div>

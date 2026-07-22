@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { ChevronDown, CalendarDays, Loader2 } from "lucide-react";
-import { HEBREW_DAYS } from "@/lib/dutyUtils";
+import { HEBREW_DAYS, formatTimeRange } from "@/lib/dutyUtils";
 
 export default function TeacherScheduleSection({ teacherId }) {
   const [open, setOpen] = useState(false);
@@ -43,7 +43,7 @@ export default function TeacherScheduleSection({ teacherId }) {
                   <div className="space-y-1">
                     {dayLessons.map(lesson => (
                       <div key={lesson.id} className="text-[11px] leading-tight bg-background rounded px-1.5 py-1 border border-border/60">
-                        <span className="text-muted-foreground">{lesson.start_time}–{lesson.end_time}</span>
+                        <span className="text-muted-foreground">{formatTimeRange(lesson.start_time, lesson.end_time)}</span>
                         {lesson.class_name && <span className="block truncate">{lesson.class_name}</span>}
                       </div>
                     ))}

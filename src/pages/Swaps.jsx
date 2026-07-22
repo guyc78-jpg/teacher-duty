@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
-import { getCurrentTeacher, formatDateWithDay, BREAK_TYPES } from "@/lib/dutyUtils";
+import { getCurrentTeacher, formatDateWithDay, formatTimeRange, BREAK_TYPES } from "@/lib/dutyUtils";
 import { Clock, MapPin, Repeat, ArrowRightLeft, UserPlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -195,7 +195,7 @@ function SwapCard({ swap, onAccept, onCancel, canAccept }) {
       </div>
       <div className="flex items-center gap-3 text-sm mb-2">
         <span className={`text-xs px-2 py-0.5 rounded-full border ${bt.color}`}>{bt.label}</span>
-        <span className="flex items-center gap-1 text-muted-foreground"><Clock className="w-3.5 h-3.5" />{swap.start_time}–{swap.end_time}</span>
+        <span className="flex items-center gap-1 text-muted-foreground"><Clock className="w-3.5 h-3.5" />{formatTimeRange(swap.start_time, swap.end_time)}</span>
         <span className="flex items-center gap-1 text-muted-foreground"><MapPin className="w-3.5 h-3.5" />{swap.station_name}</span>
       </div>
       {swap.target_teacher_name && <p className="text-xs text-muted-foreground mb-2">מוען אל: {swap.target_teacher_name}</p>}
@@ -270,7 +270,7 @@ function CreateSwapModal({ teacher, assignments, allTeachers, onClose, onCreated
               className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm">
               <option value="">בחר תורנות...</option>
               {assignments.map(a => (
-                <option key={a.id} value={a.id}>{formatDateWithDay(a.date)} {a.start_time}–{a.end_time} · {a.station_name}</option>
+                <option key={a.id} value={a.id}>{formatDateWithDay(a.date)} {formatTimeRange(a.start_time, a.end_time)} · {a.station_name}</option>
               ))}
             </select>
           </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
-import { getCurrentTeacher, isManagement, BREAK_TYPES, DIVISION_LABELS } from "@/lib/dutyUtils";
+import { getCurrentTeacher, isManagement, BREAK_TYPES, DIVISION_LABELS, formatTimeRange } from "@/lib/dutyUtils";
 import { Clock, MapPin, Plus, X, Edit, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,7 +71,7 @@ function BreaksSettings() {
             </div>
             <Button variant="outline" size="sm" onClick={() => setEditing(b)}><Edit className="w-3.5 h-3.5" /></Button>
           </div>
-          <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{b.start_time}–{b.end_time}</p>
+          <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{formatTimeRange(b.start_time, b.end_time)}</p>
         </div>
       ))}
       <Button variant="outline" className="w-full" onClick={() => setEditing({})}><Plus className="w-4 h-4 ml-1" /> הוסף הפסקה</Button>

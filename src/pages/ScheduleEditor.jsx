@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
-import { getCurrentTeacher, formatDateWithDay, BREAK_TYPES, STATUS_LABELS, isManagement, schoolDaysInRange, HEBREW_DAYS } from "@/lib/dutyUtils";
+import { getCurrentTeacher, formatDateWithDay, formatTimeRange, BREAK_TYPES, STATUS_LABELS, isManagement, schoolDaysInRange, HEBREW_DAYS } from "@/lib/dutyUtils";
 import { generateDutyDraft } from "@/functions/generateDutyDraft";
 import { publishDutyPlan } from "@/functions/publishDutyPlan";
 import { Plus, Calendar, Send, AlertTriangle, Loader2, Filter, Clock, MapPin, X } from "lucide-react";
@@ -194,7 +194,7 @@ export default function ScheduleEditor() {
                           <div key={a.id} className="flex items-center gap-2 rounded-lg border border-border p-2.5 bg-card">
                             <span className={`text-xs px-2 py-0.5 rounded-full border shrink-0 ${bt.color}`}>{bt.label}</span>
                             <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                            <span className="text-xs shrink-0">{a.start_time}–{a.end_time}</span>
+                            <span className="text-xs shrink-0">{formatTimeRange(a.start_time, a.end_time)}</span>
                             <MapPin className="w-3.5 h-3.5 text-muted-foreground shrink-0 mr-auto" />
                             <span className="text-xs truncate">{a.station_name}</span>
                             {selectedPlan.status === "draft" ? (
