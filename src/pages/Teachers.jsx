@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { getCurrentTeacher, DIVISION_LABELS, isManagement } from "@/lib/dutyUtils";
-import { Plus, Search, X, Edit, UserPlus, Upload } from "lucide-react";
+import { Plus, Search, X, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import ScheduleImportButton from "@/components/teachers/ScheduleImportButton";
 
 export default function Teachers() {
   const [teacher, setTeacher] = useState(null);
@@ -37,9 +38,12 @@ export default function Teachers() {
     <div className="space-y-4 pb-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">ניהול מורים</h1>
-        <Button onClick={() => { setEditing(null); setShowAdd(true); }} size="sm">
-          <Plus className="w-4 h-4 ml-1" /> מורה חדש
-        </Button>
+        <div className="flex items-center gap-2">
+          {teacher.role === "admin" && <ScheduleImportButton teachers={teachers} />}
+          <Button onClick={() => { setEditing(null); setShowAdd(true); }} size="sm">
+            <Plus className="w-4 h-4 ml-1" /> מורה חדש
+          </Button>
+        </div>
       </div>
 
       <div className="relative">
