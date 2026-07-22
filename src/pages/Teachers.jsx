@@ -20,7 +20,7 @@ export default function Teachers() {
     const t = await getCurrentTeacher();
     setTeacher(t);
     if (t && isManagement(t)) {
-      const all = await base44.entities.TeacherProfile.list("-created_date", 200);
+      const all = await base44.entities.TeacherProfile.list("full_name", 200);
       setTeachers(all);
     }
     setLoading(false);
