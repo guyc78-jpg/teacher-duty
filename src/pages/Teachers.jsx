@@ -86,6 +86,15 @@ export default function Teachers() {
           teacher={selected}
           onClose={() => setSelected(null)}
           onEdit={() => { setEditing(selected); setSelected(null); setShowAdd(true); }}
+          onDelete={teacher.role === "admin" ? async () => {
+            if (!confirm(`למחוק את ${selected.full_name} לצמיתות? פעולה זו תסיר גם את מערכת השעות שלו.`)) return;
+            try {
+              await base44.entities.WeeklySchedule.deleteMany({ teacher_id: selected.id });
+              await base44.entities.TeacherProfile.delete(selected.id);
+              setSelected(null);
+              load();
+            } catch (err) { alert("שגיאה: " + (err.message || "")); }
+          } : undefined}
         />
       )}
       {showAdd && (
