@@ -32,7 +32,7 @@ export default function ScheduleEditor() {
         base44.entities.TeacherProfile.filter({ is_active: true })
       ]);
       setPlans(p);
-      setAllTeachers(teachers);
+      setAllTeachers([...teachers].sort((a, b) => (a.full_name || "").trim().localeCompare((b.full_name || "").trim(), "he")));
     }
     setLoading(false);
   }, []);

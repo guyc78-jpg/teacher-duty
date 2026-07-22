@@ -11,11 +11,9 @@ import TeacherFilters from "@/components/teachers/TeacherFilters";
 import TeacherRow from "@/components/teachers/TeacherRow";
 import TeacherDetailsCard from "@/components/teachers/TeacherDetailsCard";
 
+// השמות שמורים בפורמט "שם משפחה שם פרטי" — מיון א/ב ישיר לפי השם המלא
 function compareByLastName(a, b) {
-  const split = name => { const parts = (name || "").trim().split(/\s+/); return { last: parts.pop() || "", first: parts.join(" ") }; };
-  const nameA = split(a.full_name);
-  const nameB = split(b.full_name);
-  return nameA.last.localeCompare(nameB.last, "he") || nameA.first.localeCompare(nameB.first, "he");
+  return (a.full_name || "").trim().localeCompare((b.full_name || "").trim(), "he");
 }
 
 export default function Teachers() {
