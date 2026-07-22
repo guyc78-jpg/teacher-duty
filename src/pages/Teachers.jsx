@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import ScheduleImportButton from "@/components/teachers/ScheduleImportButton";
+import TeacherScheduleSection from "@/components/teachers/TeacherScheduleSection";
 
 export default function Teachers() {
   const [teacher, setTeacher] = useState(null);
@@ -73,6 +74,7 @@ export default function Teachers() {
                 <Edit className="w-3.5 h-3.5" />
               </Button>
             </div>
+            <TeacherScheduleSection teacherId={t.id} />
           </div>
         ))}
       </div>
