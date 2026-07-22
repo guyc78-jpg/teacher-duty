@@ -1,226 +1,68 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { History, Loader2, Plus, Send } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { getCurrentTeacher, formatDateWithDay, isManagement, isSchoolDay } from "@/lib/dutyUtils";
 import { generateDutyDraft } from "@/functions/generateDutyDraft";
+import { manageDutyAssignment } from "@/functions/manageDutyAssignment";
 import { publishDutyPlan } from "@/functions/publishDutyPlan";
-import { Plus, Send, AlertTriangle, Loader2 } from "lucide-react";
+import { getCurrentTeacher, isManagement } from "@/lib/dutyUtils";
+import { fromIso, iso, moveSchoolDay, schoolDate, weekDates, weekStart } from "@/lib/scheduleViewUtils";
 import { Button } from "@/components/ui/button";
-import AssignmentGroups from "@/components/schedule/AssignmentGroups";
-import ScheduleValidationSummary from "@/components/schedule/ScheduleValidationSummary";
-import { validateAssignments } from "@/lib/scheduleValidation";
+import DailyMatrix from "@/components/schedule/DailyMatrix";
+import MobileDailyGroups from "@/components/schedule/MobileDailyGroups";
+import PublishReviewDialog from "@/components/schedule/PublishReviewDialog";
+import ScheduleFilters from "@/components/schedule/ScheduleFilters";
+import ScheduleHeader from "@/components/schedule/ScheduleHeader";
+import ScheduleStatBar from "@/components/schedule/ScheduleStatBar";
+import TeacherPickerDialog from "@/components/schedule/TeacherPickerDialog";
+import WeeklyScheduleView from "@/components/schedule/WeeklyScheduleView";
 
+const emptyFilters = { break_type: "", division: "", level: "", station_id: "", teacher_id: "" };
 export default function ScheduleEditor() {
-  const [teacher, setTeacher] = useState(null);
-  const [plans, setPlans] = useState([]);
-  const [selectedPlan, setSelectedPlan] = useState(null);
-  const [assignments, setAssignments] = useState([]);
-  const [allTeachers, setAllTeachers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
-  const [publishing, setPublishing] = useState(false);
-  const [genResult, setGenResult] = useState(null);
-  const [filters, setFilters] = useState({ date: "", break_type: "", station_name: "", teacher_id: "" });
-  const [editingAsgn, setEditingAsgn] = useState(null);
-  const [showCreate, setShowCreate] = useState(false);
+  const [teacher, setTeacher] = useState(null), [plans, setPlans] = useState([]), [plan, setPlan] = useState(null);
+  const [assignments, setAssignments] = useState([]), [teachers, setTeachers] = useState([]), [stations, setStations] = useState([]), [breaks, setBreaks] = useState([]);
+  const [loading, setLoading] = useState(true), [busy, setBusy] = useState(false), [view, setView] = useState("day");
+  const [date, setDate] = useState(() => { const now = new Date(); while (!schoolDate(now)) now.setDate(now.getDate() + 1); return iso(now); });
+  const [week, setWeek] = useState(() => weekStart(iso(new Date()))), [filters, setFilters] = useState(emptyFilters), [editing, setEditing] = useState(null);
+  const [validation, setValidation] = useState({ errors: [], warnings: [], isValid: false }), [review, setReview] = useState(false), [message, setMessage] = useState("");
 
+  const loadPlan = useCallback(async selected => {
+    if (!selected) return;
+    const [items, result] = await Promise.all([base44.entities.Assignment.filter({ plan_id: selected.id }, "date", 500), manageDutyAssignment({ action: "validate", plan_id: selected.id })]);
+    setAssignments(items.filter(item => schoolDate(fromIso(item.date)))); setValidation(result.data); setPlan(selected);
+  }, []);
   const load = useCallback(async () => {
-    const t = await getCurrentTeacher();
-    setTeacher(t);
-    if (t && isManagement(t)) {
-      const [p, teachers] = await Promise.all([
-        base44.entities.DutyPlan.list("-created_date", 50),
-        base44.entities.TeacherProfile.filter({ is_active: true })
-      ]);
-      setPlans(p);
-      setAllTeachers([...teachers].sort((a, b) => (a.full_name || "").trim().localeCompare((b.full_name || "").trim(), "he")));
+    const current = await getCurrentTeacher(); setTeacher(current);
+    if (current && isManagement(current)) {
+      const [allPlans, allTeachers, allStations, allBreaks] = await Promise.all([base44.entities.DutyPlan.list("-created_date", 50), base44.entities.TeacherProfile.filter({ is_active: true }), base44.entities.Station.filter({ is_active: true }), base44.entities.Break.filter({ is_active: true })]);
+      setPlans(allPlans); setTeachers(allTeachers.sort((a, b) => a.full_name.localeCompare(b.full_name, "he"))); setStations(allStations.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))); setBreaks(allBreaks);
+      const chosen = plan ? allPlans.find(item => item.id === plan.id) : allPlans.find(item => item.status === "draft") || allPlans[0]; if (chosen) await loadPlan(chosen);
     }
     setLoading(false);
-  }, []);
+  }, [loadPlan, plan]);
+  useEffect(() => { load(); }, []);
 
-  useEffect(() => { load(); }, [load]);
-
-  const loadPlan = async (planId) => {
-    const asgn = await base44.entities.Assignment.filter({ plan_id: planId }, "date", 500);
-    setAssignments(asgn.filter(a => isSchoolDay(a.date)));
-    setSelectedPlan(plans.find(p => p.id === planId));
+  const dates = weekDates(week), visibleDates = view === "day" ? [date] : dates;
+  const filteredStations = stations.filter(item => (!filters.division || item.division === filters.division || item.division === "both") && (!filters.level || item.level === filters.level) && (!filters.station_id || item.id === filters.station_id));
+  const visibleAssignments = assignments.filter(item => visibleDates.includes(item.date) && (!filters.break_type || item.break_type === filters.break_type) && (!filters.station_id || item.station_id === filters.station_id) && (!filters.teacher_id || item.teacher_id === filters.teacher_id));
+  const errorsFor = targetDate => validation.errors.filter(item => item.date === targetDate), warningsFor = targetDate => validation.warnings.filter(item => item.date === targetDate);
+  const summaryFor = targetDate => {
+    const dayItems = assignments.filter(item => item.date === targetDate), required = stations.reduce((sum, station) => sum + ["big", "medium", "small"].reduce((total, type) => total + (station.active_break_types?.includes(type) ? station.staffing_requirements?.[type] || 1 : 0), 0), 0);
+    const covered = dayItems.filter(item => item.teacher_id).length, conflicts = errorsFor(targetDate).filter(item => item.type === "double_booking").length;
+    return { required, covered, missing: Math.max(0, required - covered), conflicts, warnings: warningsFor(targetDate).length };
   };
+  const weeklySummaries = useMemo(() => Object.fromEntries(dates.map(day => { const stats = summaryFor(day); const hasAssignments = assignments.some(item => item.date === day); const coverageStatus = !hasAssignments ? "טרם פורסם" : stats.conflicts ? "התנגשויות" : stats.missing ? "חסרים" : "תקין"; const status = plan?.status === "draft" ? "טרם פורסם" : coverageStatus; const statusClass = status === "תקין" ? "bg-success/10 text-success" : status === "התנגשויות" ? "bg-warning/15 text-warning" : status === "טרם פורסם" ? "bg-muted text-muted-foreground" : "bg-destructive/10 text-destructive"; return [day, { ...stats, assignments: assignments.filter(item => item.date === day).length, status, statusClass }]; })), [dates.join("|"), assignments, validation, stations, plan?.status]);
+  const statusFor = (items, required) => items.filter(item => item.teacher_id).length < required ? "missing" : items.some(item => warningsFor(item.date).some(warning => warning.assignment_id === item.id)) ? "warning" : "covered";
 
-  const handleGenerate = async () => {
-    setGenerating(true);
-    setGenResult(null);
-    try {
-      const start = new Date();
-      const end = new Date();
-      end.setMonth(end.getMonth() + 1);
-      const startStr = start.toISOString().slice(0, 10);
-      const endStr = end.toISOString().slice(0, 10);
-      let res;
-      try {
-        res = await generateDutyDraft({ start_date: startStr, end_date: endStr, plan_name: `טיוטה ${startStr}` });
-      } catch (err) {
-        const data = err.response?.data;
-        if (!data?.requires_approval) throw err;
-        if (!confirm(`למורים הבאים חסרה מערכת שעות או שמוגדרות להם 0 שעות הוראה:\n${data.incomplete_teachers.join(", ")}\n\nלאשר יצירת טיוטה בכל זאת?`)) return;
-        res = await generateDutyDraft({ start_date: startStr, end_date: endStr, plan_name: `טיוטה ${startStr}`, approve_incomplete: true });
-      }
-      setGenResult(res.data);
-      await load();
-    } catch (err) { alert("שגיאה: " + (err.response?.data?.error || err.message || "")); }
-    finally { setGenerating(false); }
-  };
+  const generate = async () => { setBusy(true); setMessage(""); try { const start = weekStart(iso(new Date())), end = fromIso(start); end.setDate(end.getDate() + 32); const result = await generateDutyDraft({ start_date: start, end_date: iso(end), plan_name: `טיוטה ${start}`, approve_incomplete: true }); setMessage(`נוצרו ${result.data.assignments_created} שיבוצים`); await load(); } catch (error) { setMessage(error.response?.data?.error || error.message); } finally { setBusy(false); } };
+  const openReview = async () => { setBusy(true); try { const result = await manageDutyAssignment({ action: "validate", plan_id: plan.id, include_under_quota: true }); setValidation(result.data); setReview(true); } finally { setBusy(false); } };
+  const publish = async reason => { setBusy(true); try { const result = await publishDutyPlan({ plan_id: plan.id, expected_updated_date: plan.updated_date, override_reason: reason }); setMessage(`פורסם בהצלחה; נשלחו ${result.data.notified} התראות למורים ששיבוצם השתנה`); setReview(false); await load(); } catch (error) { setMessage(error.response?.data?.error || error.message); } finally { setBusy(false); } };
+  const restore = async () => { if (!plan || plan.version <= 1 || !confirm(`לשחזר את גרסה ${plan.version - 1}?`)) return; setBusy(true); try { await manageDutyAssignment({ action: "restore", plan_id: plan.id, version: plan.version - 1, expected_plan_updated_date: plan.updated_date }); await load(); setMessage("הגרסה הקודמת שוחזרה"); } catch (error) { setMessage(error.response?.data?.error || error.message); } finally { setBusy(false); } };
 
-  const handlePublish = async () => {
-    if (!selectedPlan) return;
-    if (!confirm("פרסום הלוח ישלח התראות לכל המורים המשובצים. להמשיך?")) return;
-    setPublishing(true);
-    try {
-      const res = await publishDutyPlan({ plan_id: selectedPlan.id });
-      alert(`פורסם בהצלחה! נשלחו ${res.data.notified} התראות.`);
-      await load();
-      await loadPlan(selectedPlan.id);
-    } catch (err) {
-      const data = err.response?.data;
-      if (data?.conflicts) {
-        alert(`נמצאו ${data.conflicts.length} התנגשויות. לא ניתן לפרסם.`);
-        setGenResult({ conflicts: data.conflicts });
-      } else {
-        alert("שגיאה: " + (err.message || ""));
-      }
-    } finally { setPublishing(false); }
-  };
-
-  const updateAssignment = async (asgnId, teacherId) => {
-    const t = allTeachers.find(tt => tt.id === teacherId);
-    try {
-      await base44.entities.Assignment.update(asgnId, {
-        teacher_id: teacherId,
-        teacher_name: t?.full_name || "",
-        source: "manual",
-        change_history: [...(editingAsgn?.change_history || []), {
-          timestamp: new Date().toISOString(),
-          user: teacher?.full_name,
-          action: "manual_change",
-          reason: "שינוי ידני",
-          previous_teacher: editingAsgn?.teacher_name
-        }]
-      });
-      setEditingAsgn(null);
-      if (selectedPlan) await loadPlan(selectedPlan.id);
-    } catch (err) { alert("שגיאה: " + (err.message || "")); }
-  };
-
-  if (loading) return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" /></div>;
-  if (!teacher || !isManagement(teacher)) return <p className="text-center py-20 text-muted-foreground">אין הרשאה.</p>;
-
-  const filtered = assignments.filter(a => {
-    if (filters.date && a.date !== filters.date) return false;
-    if (filters.break_type && a.break_type !== filters.break_type) return false;
-    if (filters.station_name && a.station_name !== filters.station_name) return false;
-    if (filters.teacher_id && a.teacher_id !== filters.teacher_id) return false;
-    return true;
-  });
-
-  const stationNames = [...new Set(assignments.map(a => a.station_name))];
-  const dates = [...new Set(filtered.map(a => a.date))].sort();
-  const validation = validateAssignments(assignments);
-
-  return (
-    <div className="space-y-4 pb-4">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-2xl font-bold">עורך שיבוצים</h1>
-        <Button onClick={handleGenerate} disabled={generating} variant="outline" size="sm">
-          {generating ? <><Loader2 className="w-4 h-4 ml-1 animate-spin" /> יוצר...</> : <><Plus className="w-4 h-4 ml-1" /> יצירת טיוטה</>}
-        </Button>
-      </div>
-
-      {genResult?.conflicts?.length > 0 && (
-        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3">
-          <div className="flex items-center gap-2 mb-2"><AlertTriangle className="w-4 h-4 text-destructive" /><span className="font-medium text-sm">התנגשויות / עמדות חסרות ({genResult.conflicts.length})</span></div>
-          <div className="space-y-1 max-h-40 overflow-y-auto">
-            {genResult.conflicts.map((c, i) => (
-              <div key={i} className="text-xs text-muted-foreground">{formatDateWithDay(c.date)} · {c.break_name} · {c.station_name} — {c.issue}</div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {genResult && !genResult.conflicts?.length && (
-        <div className="rounded-xl border border-success/30 bg-success/5 p-3 text-sm">
-          נוצרו {genResult.assignments_created} שיבוצים ב-{genResult.school_days} ימי לימוד.
-        </div>
-      )}
-
-      {/* Plan selector */}
-      <select value={selectedPlan?.id || ""} onChange={e => e.target.value && loadPlan(e.target.value)}
-        className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm">
-        <option value="">בחר תוכנית...</option>
-        {plans.map(p => (
-          <option key={p.id} value={p.id}>{p.name} ({p.status === "draft" ? "טיוטה" : p.status === "published" ? "פורסם" : "ארכיון"})</option>
-        ))}
-      </select>
-
-      {selectedPlan && (
-        <>
-          <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-stretch">
-            <ScheduleValidationSummary validation={validation} />
-            {selectedPlan.status === "draft" && (
-              <Button
-                onClick={handlePublish}
-                disabled={!validation.isValid || publishing}
-                aria-describedby="publish-validation-note"
-                className="h-auto min-h-12 sm:min-w-36"
-              >
-                {publishing ? <><Loader2 className="w-4 h-4 ml-1 animate-spin" /> מפרסם...</> : <><Send className="w-4 h-4 ml-1" /> פרסום הלוח</>}
-              </Button>
-            )}
-          </div>
-          {selectedPlan.status === "draft" && !validation.isValid && <p id="publish-validation-note" className="text-xs text-muted-foreground">הפרסום יתאפשר לאחר כיסוי מלא ופתרון כל ההתנגשויות.</p>}
-
-          {/* Filters */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <select value={filters.date} onChange={e => setFilters(f => ({ ...f, date: e.target.value }))} className="h-10 rounded-lg border border-input bg-background px-2 text-sm">
-              <option value="">כל ימי העבודה</option>
-              {[...new Set(assignments.map(a => a.date))].sort().map(date => <option key={date} value={date}>{formatDateWithDay(date)}</option>)}
-            </select>
-            <select value={filters.break_type} onChange={e => setFilters(f => ({ ...f, break_type: e.target.value }))} className="h-10 rounded-lg border border-input bg-background px-2 text-sm">
-              <option value="">כל ההפסקות</option>
-              <option value="big">גדולה</option>
-              <option value="medium">בינונית</option>
-              <option value="small">קטנה</option>
-            </select>
-            <select value={filters.station_name} onChange={e => setFilters(f => ({ ...f, station_name: e.target.value }))} className="h-10 rounded-lg border border-input bg-background px-2 text-sm">
-              <option value="">כל העמדות</option>
-              {stationNames.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-            <select value={filters.teacher_id} onChange={e => setFilters(f => ({ ...f, teacher_id: e.target.value }))} className="h-10 rounded-lg border border-input bg-background px-2 text-sm">
-              <option value="">כל המורים</option>
-              {allTeachers.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
-            </select>
-          </div>
-
-          {/* Assignments by date */}
-          {dates.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">אין שיבוצים</div>
-          ) : (
-            <div className="space-y-4">
-              {dates.map(date => {
-                const dayAssignments = filtered.filter(a => a.date === date).sort((a, b) => a.break_type.localeCompare(b.break_type) || a.station_name.localeCompare(b.station_name));
-                return (
-                  <div key={date}>
-                    <h3 className="font-semibold text-sm text-muted-foreground mb-2">{formatDateWithDay(date)}</h3>
-                    <AssignmentGroups
-                      assignments={dayAssignments}
-                      isDraft={selectedPlan.status === "draft"}
-                      teachers={allTeachers}
-                      onTeacherChange={(assignment, teacherId) => { setEditingAsgn(assignment); updateAssignment(assignment.id, teacherId); }}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  );
+  if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin" /></div>;
+  if (!teacher || !isManagement(teacher)) return <p className="py-20 text-center text-muted-foreground">אין הרשאה.</p>;
+  return <div className="space-y-3 pb-4"><ScheduleHeader view={view} setView={setView} date={date} onDate={value => { if (schoolDate(fromIso(value))) { setDate(value); setWeek(weekStart(value)); } else setMessage("ניתן להציג רק ימים ראשון–חמישי"); }} onPrevious={() => view === "day" ? setDate(moveSchoolDay(date, -1)) : setWeek(iso(new Date(fromIso(week).setDate(fromIso(week).getDate() - 7))))} onNext={() => view === "day" ? setDate(moveSchoolDay(date, 1)) : setWeek(iso(new Date(fromIso(week).setDate(fromIso(week).getDate() + 7))))} onToday={() => { const today = iso(new Date()); const safe = schoolDate(fromIso(today)) ? today : moveSchoolDay(today, 1); setDate(safe); setWeek(weekStart(safe)); }} />
+    <div className="flex flex-wrap gap-2"><select aria-label="בחירת תוכנית" value={plan?.id || ""} onChange={e => loadPlan(plans.find(item => item.id === e.target.value))} className="h-10 min-w-0 basis-full rounded-lg border border-input bg-background px-3 text-sm sm:flex-1 sm:basis-0"><option value="">בחר תוכנית</option>{plans.map(item => <option key={item.id} value={item.id}>{item.name} · גרסה {item.version} · {item.status === "draft" ? "טיוטה" : "פורסם"}</option>)}</select><Button variant="outline" onClick={generate} disabled={busy}><Plus />טיוטה אוטומטית</Button>{plan?.status === "draft" && plan.version > 1 && <Button variant="outline" onClick={restore} disabled={busy}><History />שחזור</Button>}{plan?.status === "draft" && <Button onClick={openReview} disabled={busy}><Send />בדיקה ופרסום</Button>}</div>
+    {message && <p role="status" className="rounded-lg border border-border bg-card p-2 text-sm">{message}</p>}{!plan ? <div className="py-16 text-center text-muted-foreground">יש לבחור תוכנית או ליצור טיוטה חדשה</div> : <><ScheduleFilters filters={filters} setFilters={setFilters} stations={stations} teachers={teachers} />{view === "day" ? <><ScheduleStatBar stats={summaryFor(date)} /><DailyMatrix stations={filteredStations} assignments={visibleAssignments} onEdit={setEditing} statusFor={statusFor} /><MobileDailyGroups stations={filteredStations} assignments={visibleAssignments} onEdit={setEditing} statusFor={statusFor} /></> : <WeeklyScheduleView dates={dates} assignments={visibleAssignments} summaries={weeklySummaries} onOpenDay={day => { setDate(day); setView("day"); }} />}</>}
+    {editing && plan?.status === "draft" && <TeacherPickerDialog context={editing} plan={plan} date={date} onClose={() => setEditing(null)} onSaved={async result => { setEditing(null); setPlan(result.plan); await loadPlan(result.plan); setMessage("השינוי נשמר אוטומטית בטיוטה"); }} />}{review && <PublishReviewDialog validation={validation} busy={busy} onClose={() => setReview(false)} onPublish={publish} />}
+  </div>;
 }

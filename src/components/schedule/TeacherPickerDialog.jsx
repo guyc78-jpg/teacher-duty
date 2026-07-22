@@ -1,0 +1,18 @@
+import React, { useEffect, useState } from "react";
+import { Loader2, Lock, Sparkles, Trash2 } from "lucide-react";
+import { manageDutyAssignment } from "@/functions/manageDutyAssignment";
+import { Button } from "@/components/ui/button";
+import CloseButton from "@/components/ui/close-button";
+import { Input } from "@/components/ui/input";
+
+export default function TeacherPickerDialog({ context, plan, date, onClose, onSaved }) {
+  const [candidates, setCandidates] = useState([]), [selected, setSelected] = useState(null), [reason, setReason] = useState(""), [busy, setBusy] = useState(true), [error, setError] = useState("");
+  const assignment = context.assignment || context.assignments?.find(item => !item.teacher_id);
+  const payload = { plan_id: plan.id, assignment_id: assignment?.id, station_id: context.station.id, break_type: context.breakType, date };
+  useEffect(() => { manageDutyAssignment({ action: "candidates", ...payload }).then(res => setCandidates(res.data.candidates)).catch(err => setError(err.response?.data?.error || err.message)).finally(() => setBusy(false)); }, []);
+  const save = async (teacherId) => { const candidate = candidates.find(item => item.id === teacherId); if (candidate?.warnings.length && !reason.trim()) return setError("יש להזין סיבת חריגה"); setBusy(true); setError(""); try { const res = await manageDutyAssignment({ action: "assign", ...payload, teacher_id: teacherId || null, override_reason: reason, expected_plan_updated_date: plan.updated_date, expected_assignment_updated_date: assignment?.updated_date }); onSaved(res.data); } catch (err) { setError(err.response?.data?.error || err.message); } finally { setBusy(false); } };
+  return <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"><button aria-label="סגירת בחירת מורה" className="absolute inset-0 bg-foreground/40" onClick={onClose} /><div className="relative max-h-[88vh] w-full overflow-y-auto rounded-t-2xl bg-background p-4 sm:max-w-lg sm:rounded-2xl"><div className="mb-3 flex items-center justify-between"><div><h2 className="font-bold">{context.station.name}</h2><p className="text-xs text-muted-foreground">בחירת מורה ושמירה אוטומטית</p></div><CloseButton onClick={onClose} /></div>
+    {busy && !candidates.length ? <div className="flex justify-center py-12"><Loader2 className="animate-spin" /></div> : <div className="space-y-1.5">{candidates.map((item, index) => <button key={item.id} disabled={!item.available || busy} onClick={() => setSelected(item)} className={`w-full rounded-lg border p-2.5 text-right disabled:opacity-60 ${selected?.id === item.id ? "border-primary bg-primary/5" : "border-border"}`}><span className="flex items-center gap-2 text-sm font-semibold">{index < 3 && item.available && <Sparkles className="h-4 w-4 text-primary" />}{item.full_name}{!item.available && <Lock className="mr-auto h-4 w-4" />}</span><span className="mt-1 block text-xs text-muted-foreground">{item.available ? (item.warnings.join(" · ") || "מומלץ וזמין") : item.reasons.join(" · ")}</span></button>)}</div>}
+    {selected?.warnings.length > 0 && <Input className="mt-3" value={reason} onChange={e => setReason(e.target.value)} placeholder="סיבת חריגה (חובה)" />}{error && <p role="alert" className="mt-2 text-sm text-destructive">{error}</p>}<div className="mt-3 flex gap-2">{assignment?.teacher_id && <Button variant="outline" onClick={() => save(null)} disabled={busy}><Trash2 />הסרה</Button>}<Button className="flex-1" disabled={!selected || busy} onClick={() => save(selected.id)}>{busy ? "שומר..." : "שמירה"}</Button></div>
+  </div></div>;
+}

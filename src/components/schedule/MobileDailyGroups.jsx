@@ -1,0 +1,8 @@
+import React from "react";
+import { Plus } from "lucide-react";
+import { BREAKS } from "@/lib/scheduleViewUtils";
+
+const tone = status => status === "missing" ? "border-destructive/40 bg-destructive/5" : status === "warning" ? "border-warning/50 bg-warning/10" : "border-success/35 bg-success/5";
+export default function MobileDailyGroups({ stations, assignments, onEdit, statusFor }) {
+  return <div className="space-y-3 md:hidden">{BREAKS.map(brk => <section key={brk.key} className="rounded-xl border border-border bg-card p-2.5"><h3 className="mb-2 text-sm font-bold">{brk.label}</h3><div className="space-y-1.5">{stations.map(station => { const cell = assignments.filter(a => a.station_id === station.id && a.break_type === brk.key), staffed = cell.filter(a => a.teacher_id), required = station.staffing_requirements?.[brk.key] || 1, context = { station, breakType: brk.key, assignments: cell }; return <div key={station.id} className={`rounded-lg border p-2.5 ${tone(statusFor(cell, required))}`}><div className="flex items-center justify-between gap-2"><span className="text-sm font-semibold">{station.name}</span><span className="text-xs font-bold">{staffed.length}/{required}</span></div><div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">{staffed.map(item => <button key={item.id} className="whitespace-normal text-right text-xs font-medium hover:text-primary" onClick={() => onEdit({ ...context, assignment: item })}>{item.teacher_name}</button>)}{staffed.length < required && <button className="flex items-center gap-1 text-xs font-semibold text-primary" onClick={() => onEdit(context)}><Plus className="h-3.5 w-3.5" />הוספה</button>}</div></div>; })}</div></section>)}</div>;
+}

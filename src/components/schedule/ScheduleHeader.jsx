@@ -1,0 +1,8 @@
+import React from "react";
+import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { heDate } from "@/lib/scheduleViewUtils";
+
+export default function ScheduleHeader({ view, setView, date, onDate, onPrevious, onNext, onToday }) {
+  return <div className="space-y-2"><div className="flex flex-wrap items-center justify-between gap-2"><div><h1 className="text-xl font-bold">עורך שיבוצים</h1><p className="text-sm text-muted-foreground">{view === "day" ? heDate(date) : "ראשון–חמישי"}</p></div><div className="flex rounded-lg bg-muted p-1"><button className={`rounded-md px-4 py-2 text-sm ${view === "day" ? "bg-background shadow-sm" : "text-muted-foreground"}`} onClick={() => setView("day")}>יומי</button><button className={`rounded-md px-4 py-2 text-sm ${view === "week" ? "bg-background shadow-sm" : "text-muted-foreground"}`} onClick={() => setView("week")}>שבועי</button></div></div><div className="flex items-center gap-1.5"><Button size="icon" variant="outline" aria-label="הקודם" onClick={onPrevious}><ChevronRight /></Button><Button variant="outline" onClick={onToday}>נוכחי</Button>{view === "day" && <label className="relative"><CalendarDays className="pointer-events-none absolute right-3 top-3 h-4 w-4" /><input aria-label="בחירת תאריך" type="date" value={date} onChange={e => onDate(e.target.value)} className="h-10 rounded-lg border border-input bg-background pr-9 pl-2 text-sm" /></label>}<Button size="icon" variant="outline" aria-label="הבא" onClick={onNext}><ChevronLeft /></Button></div></div>;
+}

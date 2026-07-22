@@ -1,0 +1,79 @@
+{
+  "name": "AssignmentRevision",
+  "type": "object",
+  "properties": {
+    "plan_id": {
+      "type": "string",
+      "title": "\u05ea\u05d5\u05db\u05e0\u05d9\u05ea"
+    },
+    "assignment_id": {
+      "type": "string",
+      "title": "\u05e9\u05d9\u05d1\u05d5\u05e5"
+    },
+    "version": {
+      "type": "number",
+      "title": "\u05d2\u05e8\u05e1\u05d4"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "add",
+        "assign",
+        "remove",
+        "restore"
+      ],
+      "title": "\u05e4\u05e2\u05d5\u05dc\u05d4"
+    },
+    "previous_teacher_id": {
+      "type": "string",
+      "title": "\u05de\u05d5\u05e8\u05d4 \u05e7\u05d5\u05d3\u05dd"
+    },
+    "previous_teacher_name": {
+      "type": "string",
+      "title": "\u05e9\u05dd \u05e7\u05d5\u05d3\u05dd"
+    },
+    "new_teacher_id": {
+      "type": "string",
+      "title": "\u05de\u05d5\u05e8\u05d4 \u05d7\u05d3\u05e9"
+    },
+    "new_teacher_name": {
+      "type": "string",
+      "title": "\u05e9\u05dd \u05d7\u05d3\u05e9"
+    },
+    "override_reason": {
+      "type": "string",
+      "title": "\u05e1\u05d9\u05d1\u05ea \u05d7\u05e8\u05d9\u05d2\u05d4"
+    },
+    "changed_by_id": {
+      "type": "string",
+      "title": "\u05de\u05e9\u05ea\u05de\u05e9"
+    },
+    "changed_by_name": {
+      "type": "string",
+      "title": "\u05e9\u05dd \u05de\u05d1\u05e6\u05e2"
+    },
+    "changed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "\u05d6\u05de\u05df \u05e9\u05d9\u05e0\u05d5\u05d9"
+    },
+    "assignment_snapshot": {
+      "type": "object",
+      "title": "\u05de\u05e6\u05d1 \u05d4\u05e9\u05d9\u05d1\u05d5\u05e5"
+    }
+  },
+  "required": [
+    "plan_id",
+    "assignment_id",
+    "version",
+    "action",
+    "changed_by_id",
+    "changed_at"
+  ],
+  "access": {
+    "read": "admin",
+    "create": "admin",
+    "update": "admin",
+    "delete": "admin"
+  }
+}
