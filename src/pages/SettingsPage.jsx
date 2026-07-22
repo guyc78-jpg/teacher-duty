@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
-import { getCurrentTeacher, isManagement, BREAK_TYPES, DIVISION_LABELS, formatTimeRange } from "@/lib/dutyUtils";
-import { Clock, MapPin, Plus, X, Edit, Save, Trash2 } from "lucide-react";
+import { getCurrentTeacher, isManagement, DIVISION_LABELS } from "@/lib/dutyUtils";
+import { Plus, X, Edit, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import BreaksSettings from "@/components/settings/BreaksSettings";
 
 export default function SettingsPage() {
   const [teacher, setTeacher] = useState(null);
@@ -37,91 +38,11 @@ export default function SettingsPage() {
           </button>
         ))}
       </div>
-      {tab === "breaks" && <BreaksSettings />}
+      {tab === "breaks" && <BreaksSettings Modal={Modal} />}
       {tab === "stations" && <StationsSettings />}
       {tab === "rules" && <RulesSettings />}
       {tab === "general" && <GeneralSettings />}
     </div>
-  );
-}
-
-function BreaksSettings() {
-  const [breaks, setBreaks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(null);
-
-  const load = useCallback(async () => {
-    const all = await base44.entities.Break.list("sort_order", 20);
-    setBreaks(all);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  if (loading) return <div className="flex justify-center py-8"><div className="w-6 h-6 border-4 border-muted border-t-primary rounded-full animate-spin" /></div>;
-
-  return (
-    <div className="space-y-2">
-      {breaks.map(b => (
-        <div key={b.id} className="rounded-xl border border-border p-3 bg-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="font-medium">{b.name}</span>
-              <span className={`text-xs mr-2 px-2 py-0.5 rounded-full border ${BREAK_TYPES[b.break_type].color}`}>{BREAK_TYPES[b.break_type].label}</span>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => setEditing(b)}><Edit className="w-3.5 h-3.5" /></Button>
-          </div>
-          <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{formatTimeRange(b.start_time, b.end_time)}</p>
-        </div>
-      ))}
-      <Button variant="outline" className="w-full" onClick={() => setEditing({})}><Plus className="w-4 h-4 ml-1" /> הוסף הפסקה</Button>
-      {editing && <BreakModal brk={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }} />}
-    </div>
-  );
-}
-
-function BreakModal({ brk, onClose, onSaved }) {
-  const [form, setForm] = useState(brk.id ? brk : { break_type: "small", name: "", start_time: "", end_time: "", active_days: [0,1,2,3,4], is_active: true, sort_order: 0 });
-  const [saving, setSaving] = useState(false);
-  const days = ["ראשון", "שני", "שלישי", "רביעי", "חמישי"];
-
-  const toggleDay = (d) => setForm(f => ({ ...f, active_days: f.active_days.includes(d) ? f.active_days.filter(x => x !== d) : [...f.active_days, d] }));
-
-  const submit = async () => {
-    setSaving(true);
-    try {
-      if (brk.id) await base44.entities.Break.update(brk.id, form);
-      else await base44.entities.Break.create(form);
-      onSaved();
-    } catch (err) { alert("שגיאה: " + (err.message || "")); }
-    finally { setSaving(false); }
-  };
-
-  return (
-    <Modal title={brk.id ? "עריכת הפסקה" : "הפסקה חדשה"} onClose={onClose}>
-      <div className="space-y-3">
-        <div><Label>שם</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
-        <div>
-          <Label>סוג</Label>
-          <select value={form.break_type} onChange={e => setForm(f => ({ ...f, break_type: e.target.value }))} className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm">
-            <option value="big">גדולה</option><option value="medium">בינונית</option><option value="small">קטנה</option>
-          </select>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div><Label>התחלה</Label><Input type="time" value={form.start_time} onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))} /></div>
-          <div><Label>סיום</Label><Input type="time" value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))} /></div>
-        </div>
-        <div>
-          <Label>ימים פעילים</Label>
-          <div className="flex gap-1">
-            {days.map((d, i) => (
-              <button key={i} onClick={() => toggleDay(i)} className={`px-2 py-1 rounded text-xs ${form.active_days.includes(i) ? "bg-primary text-primary-foreground" : "bg-muted"}`}>{d}</button>
-            ))}
-          </div>
-        </div>
-        <Button onClick={submit} disabled={saving} className="w-full h-11">{saving ? "שומר..." : "שמור"}</Button>
-      </div>
-    </Modal>
   );
 }
 
