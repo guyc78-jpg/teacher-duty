@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { getCurrentTeacher, formatDateWithDay, formatTimeRange, isSchoolDay, BREAK_TYPES } from "@/lib/dutyUtils";
-import { Clock, MapPin, Repeat, ArrowRightLeft, UserPlus, X } from "lucide-react";
+import { Clock, MapPin, Repeat, ArrowRightLeft, X } from "lucide-react";
+import { manageSwapRequest } from "@/functions/manageSwapRequest";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import CreateSwapModal from "@/components/swaps/CreateSwapModal";
 
 export default function Swaps() {
   const [teacher, setTeacher] = useState(null);
@@ -14,19 +15,22 @@ export default function Swaps() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("mine"); // mine | open | create | history
   const [showCreate, setShowCreate] = useState(false);
+  const [acceptingId, setAcceptingId] = useState(null);
 
   const load = useCallback(async () => {
     const t = await getCurrentTeacher();
     setTeacher(t);
     if (t) {
-      const [mine, open, asgn, teachers] = await Promise.all([
+      const [mine, open, direct, asgn, teachers] = await Promise.all([
         base44.entities.SwapRequest.filter({ initiator_id: t.id }, "-created_at", 50),
         base44.entities.SwapRequest.filter({ is_open: true, status: "pending" }, "-created_at", 50),
+        base44.entities.SwapRequest.filter({ target_teacher_id: t.id, status: "pending" }, "-created_at", 50),
         base44.entities.Assignment.filter({ teacher_id: t.id, plan_status: "published" }, "date", 100),
         base44.entities.TeacherProfile.filter({ is_active: true })
       ]);
       setMyRequests(mine.filter(r => isSchoolDay(r.date)));
-      setOpenRequests(open.filter(r => isSchoolDay(r.date)));
+      const available = [...open, ...direct].filter((request, index, all) => request.initiator_id !== t.id && isSchoolDay(request.date) && all.findIndex(item => item.id === request.id) === index);
+      setOpenRequests(available);
       setAssignments(asgn.filter(a => isSchoolDay(a.date)).sort((a, b) => a.date.localeCompare(b.date)));
       setAllTeachers(teachers.filter(tt => tt.id !== t.id));
     }
@@ -40,75 +44,27 @@ export default function Swaps() {
   }, [load]);
 
   const acceptSwap = async (swap) => {
-    if (!teacher) return;
+    if (!teacher || acceptingId) return;
     if (!confirm("לאשר קבלת החלפה זו?")) return;
+    setAcceptingId(swap.id);
     try {
-      // Atomic check: verify teacher is available
-      const myAssignments = await base44.entities.Assignment.filter({ teacher_id: teacher.id, date: swap.date, plan_status: "published" });
-      const conflicting = myAssignments.find(a => a.break_type === swap.break_type);
-      if (conflicting) {
-        alert("לא ניתן לקבל — יש לך כבר תורנות באותה הפסקה.");
-        return;
-      }
-      // Check schedule conflict
-      const schedule = await base44.entities.WeeklySchedule.filter({ teacher_id: teacher.id, day_of_week: new Date(swap.date).getDay() });
-      const conflict = schedule.find(s => {
-        const sTime = s.start_time, eTime = s.end_time;
-        return !(swap.end_time <= sTime || swap.start_time >= eTime);
-      });
-      if (conflict) {
-        alert("לא ניתן לקבל — יש לך שיעור בזמן זה.");
-        return;
-      }
-      // Check absence
-      const absences = await base44.entities.Absence.filter({ teacher_id: teacher.id, status: "approved" });
-      const absent = absences.find(ab => swap.date >= ab.start_date && swap.date <= ab.end_date);
-      if (absent) {
-        alert("לא ניתן לקבל — אתה מוגדר כנעדר בתאריך זה.");
-        return;
-      }
-
-      // Accept the swap atomically
-      await base44.entities.SwapRequest.update(swap.id, {
-        status: "accepted",
-        accepted_at: new Date().toISOString(),
-        accepted_by_id: teacher.id,
-        accepted_by_name: teacher.full_name,
-        is_open: false
-      });
-      // Update the assignment: swap teachers
-      const origAssignment = await base44.entities.Assignment.filter({ id: swap.assignment_id });
-      if (origAssignment[0]) {
-        const a = origAssignment[0];
-        await base44.entities.Assignment.update(a.id, {
-          teacher_id: teacher.id,
-          teacher_name: teacher.full_name,
-          replacement_teacher_id: a.teacher_id,
-          replacement_teacher_name: a.teacher_name,
-          source: "swap",
-          status: "scheduled"
-        });
-      }
-      // Notify initiator
-      await base44.entities.Notification.create({
-        user_id: swap.initiator_id,
-        title: "בקשת החלפה התקבלה",
-        body: `${teacher.full_name} קיבל/ה את החלפת התורנות ב-${formatDateWithDay(swap.date)}`,
-        type: "swap_accepted",
-        link: "/my-duties",
-        is_operational: true,
-        created_at: new Date().toISOString()
-      });
+      await manageSwapRequest({ action: "accept", swapRequestId: swap.id });
       await load();
-    } catch (err) {
-      alert("שגיאה באישור ההחלפה: " + (err.message || ""));
-    }
+    } catch (error) {
+      alert(error.response?.data?.error || error.message || "לא ניתן לאשר את ההחלפה");
+      await load();
+    } finally { setAcceptingId(null); }
   };
 
   const cancelSwap = async (swap) => {
     if (!confirm("לבטל בקשה זו?")) return;
-    await base44.entities.SwapRequest.update(swap.id, { status: "cancelled", is_open: false });
-    await load();
+    try {
+      await manageSwapRequest({ action: "cancel", swapRequestId: swap.id });
+      await load();
+    } catch (error) {
+      alert(error.response?.data?.error || error.message || "לא ניתן לבטל את הבקשה");
+      await load();
+    }
   };
 
   if (loading) return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" /></div>;
@@ -128,7 +84,7 @@ export default function Swaps() {
       <div className="flex gap-1 bg-muted p-1 rounded-lg">
         {[
           { v: "mine", l: "הבקשות שלי" },
-          { v: "open", l: "בקשות פתוחות" },
+          { v: "open", l: "בקשות זמינות" },
           { v: "history", l: "היסטוריה" }
         ].map(t => (
           <button key={t.v} onClick={() => setTab(t.v)}
@@ -153,7 +109,7 @@ export default function Swaps() {
           {openRequests.length === 0 ? (
             <EmptyState text="אין בקשות פתוחות כרגע" />
           ) : (
-            openRequests.map(s => <SwapCard key={s.id} swap={s} onAccept={() => acceptSwap(s)} canAccept />)
+            openRequests.map(s => <SwapCard key={s.id} swap={s} onAccept={() => acceptSwap(s)} canAccept accepting={acceptingId === s.id} />)
           )}
         </div>
       )}
@@ -170,7 +126,6 @@ export default function Swaps() {
 
       {showCreate && (
         <CreateSwapModal
-          teacher={teacher}
           assignments={assignments.filter(a => a.status === "scheduled" && a.date >= new Date().toISOString().slice(0, 10))}
           allTeachers={allTeachers}
           onClose={() => setShowCreate(false)}
@@ -181,7 +136,7 @@ export default function Swaps() {
   );
 }
 
-function SwapCard({ swap, onAccept, onCancel, canAccept }) {
+function SwapCard({ swap, onAccept, onCancel, canAccept, accepting }) {
   const bt = BREAK_TYPES[swap.break_type];
   const statusLabels = { pending: "ממתינה", accepted: "התקבלה", rejected: "נדחתה", cancelled: "בוטלה", expired: "פגה" };
   const statusColors = { pending: "status-warning", accepted: "status-success", rejected: "status-danger", cancelled: "status-muted", expired: "status-muted" };
@@ -200,8 +155,8 @@ function SwapCard({ swap, onAccept, onCancel, canAccept }) {
       </div>
       {swap.target_teacher_name && <p className="text-xs text-muted-foreground mb-2">מוען אל: {swap.target_teacher_name}</p>}
       {canAccept && swap.status === "pending" && (
-        <Button size="sm" onClick={onAccept} className="w-full h-8">
-          <ArrowRightLeft className="w-3.5 h-3.5 ml-1" /> קבלת החלפה
+        <Button size="sm" onClick={onAccept} disabled={accepting} className="w-full h-8">
+          <ArrowRightLeft className="w-3.5 h-3.5 ml-1" /> {accepting ? "מאשר..." : "קבלת החלפה"}
         </Button>
       )}
       {onCancel && swap.status === "pending" && (
@@ -209,101 +164,6 @@ function SwapCard({ swap, onAccept, onCancel, canAccept }) {
           <X className="w-3.5 h-3.5 ml-1" /> ביטול בקשה
         </Button>
       )}
-    </div>
-  );
-}
-
-function CreateSwapModal({ teacher, assignments, allTeachers, onClose, onCreated }) {
-  const [assignmentId, setAssignmentId] = useState("");
-  const [swapType, setSwapType] = useState("takeover");
-  const [targetTeacherId, setTargetTeacherId] = useState("");
-  const [isOpen, setIsOpen] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-
-  const submit = async () => {
-    const a = assignments.find(x => x.id === assignmentId);
-    if (!a) { alert("יש לבחור תורנות"); return; }
-    setSubmitting(true);
-    try {
-      await base44.entities.SwapRequest.create({
-        assignment_id: a.id,
-        initiator_id: teacher.id,
-        initiator_name: teacher.full_name,
-        swap_type: swapType,
-        target_teacher_id: targetTeacherId || null,
-        target_teacher_name: allTeachers.find(t => t.id === targetTeacherId)?.full_name || null,
-        is_open: isOpen && !targetTeacherId,
-        status: "pending",
-        created_at: new Date().toISOString(),
-        valid_until: new Date(new Date(a.date).getTime() - 86400000).toISOString(),
-        date: a.date,
-        break_type: a.break_type,
-        station_name: a.station_name,
-        start_time: a.start_time,
-        end_time: a.end_time
-      });
-      await base44.entities.Notification.create({
-        user_id: teacher.user_id,
-        title: "בקשת החלפה נוצרה",
-        body: `בקשת החלפה לתורנות ב-${formatDateWithDay(a.date)}`,
-        type: "swap_request",
-        link: "/swaps",
-        created_at: new Date().toISOString()
-      });
-      onCreated();
-    } catch (err) { alert("שגיאה: " + (err.message || "")); }
-    finally { setSubmitting(false); }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-background rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md max-h-[85vh] overflow-y-auto p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-lg">בקשת החלפה</h2>
-          <button onClick={onClose}><X className="w-5 h-5" /></button>
-        </div>
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm font-medium block mb-1.5">תורנות להחלפה</label>
-            <select value={assignmentId} onChange={e => setAssignmentId(e.target.value)}
-              className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm">
-              <option value="">בחר תורנות...</option>
-              {assignments.map(a => (
-                <option key={a.id} value={a.id}>{formatDateWithDay(a.date)} {formatTimeRange(a.start_time, a.end_time)} · {a.station_name}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="text-sm font-medium block mb-1.5">סוג החלפה</label>
-            <div className="flex gap-2">
-              <button onClick={() => setSwapType("takeover")} className={`flex-1 py-2 rounded-lg border text-sm ${swapType === "takeover" ? "border-primary bg-primary/10 text-primary" : "border-border"}`}>
-                לקיחת תורנות
-              </button>
-              <button onClick={() => setSwapType("mutual")} className={`flex-1 py-2 rounded-lg border text-sm ${swapType === "mutual" ? "border-primary bg-primary/10 text-primary" : "border-border"}`}>
-                החלפה הדדית
-              </button>
-            </div>
-          </div>
-          <div>
-            <label className="text-sm font-medium block mb-1.5">מורה יעד (אופציונלי)</label>
-            <select value={targetTeacherId} onChange={e => setTargetTeacherId(e.target.value)}
-              className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm">
-              <option value="">פנויה לכולם</option>
-              {allTeachers.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
-            </select>
-          </div>
-          {!targetTeacherId && (
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={isOpen} onChange={e => setIsOpen(e.target.checked)} />
-              פרסם כבקשה פתוחה לכל המורים
-            </label>
-          )}
-          <Button onClick={submit} disabled={submitting} className="w-full h-11">
-            {submitting ? "יוצר..." : "צור בקשה"}
-          </Button>
-        </div>
-      </div>
     </div>
   );
 }
