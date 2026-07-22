@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { getVapidPublicKey } from "@/functions/getVapidPublicKey";
+import { toast } from "@/components/ui/use-toast";
 
 function urlBase64ToUint8Array(base64String) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -36,7 +37,17 @@ export default function usePush() {
         setEnabled(false);
       } else {
         const permission = await Notification.requestPermission();
-        if (permission !== "granted") { alert("יש לאשר קבלת התראות בדפדפן"); return; }
+        if (permission !== "granted") {
+          const inIframe = window.self !== window.top;
+          toast({
+            variant: "destructive",
+            title: "לא ניתן להפעיל התראות",
+            description: inIframe
+              ? "הדפדפן חוסם התראות בתצוגה המקדימה. יש לפתוח את האפליקציה בכרטיסייה נפרדת ולנסות שוב."
+              : "ההתראות חסומות בדפדפן. יש לאשר קבלת התראות עבור האתר בהגדרות הדפדפן ולנסות שוב."
+          });
+          return;
+        }
         const { data } = await getVapidPublicKey({});
         const sub = await reg.pushManager.subscribe({
           userVisibleOnly: true,
@@ -55,7 +66,10 @@ export default function usePush() {
           });
         }
         setEnabled(true);
+        toast({ title: "התראות דחיפה הופעלו", description: "מעכשיו תקבלו התראות גם כשהאתר סגור." });
       }
+    } catch (e) {
+      toast({ variant: "destructive", title: "שגיאה בהפעלת התראות", description: e.message });
     } finally { setBusy(false); }
   }, [supported, enabled, busy]);
 
