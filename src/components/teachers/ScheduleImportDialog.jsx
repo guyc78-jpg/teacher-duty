@@ -26,7 +26,7 @@ export default function ScheduleImportDialog({ teachers, onClose }) {
           <p className="text-sm text-muted-foreground">האישור יחליף את מערכות השעות הקיימות של המורים שנמצאו בקובץ.</p>
           <Button className="w-full" disabled={!importer.rows.length || busy} onClick={importer.importRows}>{busy ? <><Loader2 className="animate-spin" /> שומר...</> : "אישור והחלפת מערכות"}</Button>
         </>}
-        {importer.status === "done" && <><div className="rounded-xl bg-success/10 text-success p-4 text-center">{importer.imported} שיעורים יובאו בהצלחה.</div><Button className="w-full" onClick={onClose}>סיום</Button></>}
+        {importer.status === "done" && <><div className="rounded-xl bg-success/10 text-success p-4 text-center">{importer.imported} שיעורים יובאו בהצלחה. עודכנו שעות הוראה, ימים עמוסים וימי חופש עבור {importer.updatedTeachers} מורים — מפתח התורנויות יחושב לפי הנתונים החדשים.</div><Button className="w-full" onClick={onClose}>סיום</Button></>}
         {importer.error && <p className="text-sm text-destructive">{importer.error}</p>}
       </div>
     </div>

@@ -35,17 +35,18 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { start_date, end_date, plan_name, is_management = false } = body;
+    const { start_date, end_date, plan_name, is_management = false, approve_incomplete = false } = body;
     if (!start_date || !end_date) return Response.json({ error: "נדרש טווח תאריכים" }, { status: 400 });
 
     // טעינת נתונים
-    const [teachers, breaks, stations, rules, absences, calendarExceptions] = await Promise.all([
+    const [teachers, breaks, stations, rules, absences, calendarExceptions, allSchedules] = await Promise.all([
       base44.asServiceRole.entities.TeacherProfile.filter({ is_active: true }),
       base44.asServiceRole.entities.Break.filter({ is_active: true }),
       base44.asServiceRole.entities.Station.filter({ is_active: true }),
       base44.asServiceRole.entities.DutyRule.filter({ is_active: true }),
       base44.asServiceRole.entities.Absence.filter({ status: "approved" }),
-      base44.asServiceRole.entities.CalendarException.filter({ is_active: true })
+      base44.asServiceRole.entities.CalendarException.filter({ is_active: true }),
+      base44.asServiceRole.entities.WeeklySchedule.filter({ is_active: true })
     ]);
 
     // סינון מורים לפי מצב הרצה
@@ -59,6 +60,17 @@ Deno.serve(async (req) => {
       eligibleTeachers = eligibleTeachers.filter(t => ["admin", "coordinator"].includes(t.role));
     } else {
       eligibleTeachers = eligibleTeachers.filter(t => !t.is_exempt && t.role !== "admin");
+    }
+
+    // חסימה: מורים ללא מערכת שעות או עם 0 שעות — נדרש אישור מנהל מפורש
+    const teacherIdsWithSchedule = new Set(allSchedules.map(s => s.teacher_id));
+    const incompleteTeachers = eligibleTeachers.filter(t => !teacherIdsWithSchedule.has(t.id) || !(t.weekly_teaching_hours > 0));
+    if (incompleteTeachers.length > 0 && !approve_incomplete) {
+      return Response.json({
+        error: "קיימים מורים עם מערכת שעות חסרה או 0 שעות הוראה — נדרש אישור מנהל",
+        requires_approval: true,
+        incomplete_teachers: incompleteTeachers.map(t => t.full_name)
+      }, { status: 422 });
     }
 
     // יצירת תוכנית טיוטה
@@ -85,19 +97,24 @@ Deno.serve(async (req) => {
       }
     }
 
-    // טעינת מערכות שעות לכל המורים
-    const allSchedules = await base44.asServiceRole.entities.WeeklySchedule.filter({ is_active: true });
-
     const assignments = [];
     const conflicts = [];
     const fairnessTracker = {}; // teacher_id -> { count, minutes }
 
-    eligibleTeachers.forEach(t => { fairnessTracker[t.id] = { count: 0, minutes: 0, stations: {} }; });
+    eligibleTeachers.forEach(t => { fairnessTracker[t.id] = { count: 0, minutes: 0, stations: {}, weeks: {} }; });
+
+    // מפתח תורנויות: שבוע לועזי מתחיל ביום ראשון
+    const weekKeyOf = (dateStr) => {
+      const d = new Date(dateStr);
+      d.setDate(d.getDate() - d.getDay());
+      return toISODate(d);
+    };
 
     const sortedBreaks = breaks.sort((a, b) => BREAK_ORDER[a.break_type] - BREAK_ORDER[b.break_type]);
 
     for (const dateStr of schoolDates) {
       const dow = new Date(dateStr).getDay();
+      const weekKey = weekKeyOf(dateStr);
 
       for (const brk of sortedBreaks) {
         if (!brk.active_days.includes(dow)) continue;
@@ -113,6 +130,8 @@ Deno.serve(async (req) => {
               teachers: eligibleTeachers,
               schedules: allSchedules,
               absences,
+              rules,
+              weekKey,
               dateStr,
               dow,
               brk,
@@ -141,6 +160,8 @@ Deno.serve(async (req) => {
               fairnessTracker[candidate.id].count++;
               fairnessTracker[candidate.id].minutes += (timeToMin(brk.end_time) - timeToMin(brk.start_time));
               fairnessTracker[candidate.id].stations[station.id] = (fairnessTracker[candidate.id].stations[station.id] || 0) + 1;
+              const weekCounts = fairnessTracker[candidate.id].weeks[weekKey] || (fairnessTracker[candidate.id].weeks[weekKey] = {});
+              weekCounts[brk.break_type] = (weekCounts[brk.break_type] || 0) + 1;
             } else {
               conflicts.push({
                 date: dateStr,
@@ -186,7 +207,7 @@ Deno.serve(async (req) => {
   }
 });
 
-function findBestCandidate({ teachers, schedules, absences, dateStr, dow, brk, station, fairnessTracker, assignments }) {
+function findBestCandidate({ teachers, schedules, absences, rules, weekKey, dateStr, dow, brk, station, fairnessTracker, assignments }) {
   // סינון מועמדים
   let candidates = teachers.filter(t => {
     // עמדות מותרות
@@ -235,6 +256,17 @@ function findBestCandidate({ teachers, schedules, absences, dateStr, dow, brk, s
   // מי שכבר יש לו תורנות באותו יום — רק ביום לא עמוס וללא התנגשות
   const oneDutyToday = candidates.filter(t => dutiesToday(t) < 2);
   if (oneDutyToday.length > 0) candidates = oneDutyToday;
+
+  // מפתח תורנויות — מכסה שבועית לפי שעות ההוראה של המורה
+  const ruleFor = (t) => rules.find(r => (t.weekly_teaching_hours || 0) >= r.min_hours && (t.weekly_teaching_hours || 0) <= r.max_hours);
+  const underQuota = candidates.filter(t => {
+    const rule = ruleFor(t);
+    if (!rule) return true;
+    const quota = rule[`${brk.break_type}_count`] || 0;
+    const used = fairnessTracker[t.id]?.weeks?.[weekKey]?.[brk.break_type] || 0;
+    return used < quota;
+  });
+  if (underQuota.length > 0) candidates = underQuota;
 
   // רוטציה — הימנעות מאותה עמדה
   const notSameStation = candidates.filter(t => !(fairnessTracker[t.id]?.stations?.[station.id] > 0));

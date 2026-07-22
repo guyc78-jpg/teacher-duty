@@ -54,7 +54,15 @@ export default function ScheduleEditor() {
       end.setMonth(end.getMonth() + 1);
       const startStr = start.toISOString().slice(0, 10);
       const endStr = end.toISOString().slice(0, 10);
-      const res = await generateDutyDraft({ start_date: startStr, end_date: endStr, plan_name: `טיוטה ${startStr}` });
+      let res;
+      try {
+        res = await generateDutyDraft({ start_date: startStr, end_date: endStr, plan_name: `טיוטה ${startStr}` });
+      } catch (err) {
+        const data = err.response?.data;
+        if (!data?.requires_approval) throw err;
+        if (!confirm(`למורים הבאים חסרה מערכת שעות או שמוגדרות להם 0 שעות הוראה:\n${data.incomplete_teachers.join(", ")}\n\nלאשר יצירת טיוטה בכל זאת?`)) return;
+        res = await generateDutyDraft({ start_date: startStr, end_date: endStr, plan_name: `טיוטה ${startStr}`, approve_incomplete: true });
+      }
       setGenResult(res.data);
       await load();
     } catch (err) { alert("שגיאה: " + (err.response?.data?.error || err.message || "")); }

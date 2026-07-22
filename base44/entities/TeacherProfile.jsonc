@@ -87,6 +87,21 @@
       "title": "\u05d9\u05de\u05d9 \u05d7\u05d5\u05e4\u05e9 \u05e7\u05d1\u05d5\u05e2\u05d9\u05dd",
       "default": []
     },
+    "busy_days": {
+      "type": "array",
+      "items": {
+        "type": "number",
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "title": "\u05d9\u05de\u05d9\u05dd \u05e2\u05de\u05d5\u05e1\u05d9\u05dd",
+      "default": []
+    },
     "is_active": {
       "type": "boolean",
       "title": "\u05e4\u05e2\u05d9\u05dc",

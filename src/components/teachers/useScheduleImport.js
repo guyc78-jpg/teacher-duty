@@ -27,7 +27,7 @@ const extractionSchema = {
 };
 
 export default function useScheduleImport(teachers) {
-  const [state, setState] = useState({ status: "idle", rows: [], unmatched: [], error: "", imported: 0 });
+  const [state, setState] = useState({ status: "idle", rows: [], unmatched: [], error: "", imported: 0, updatedTeachers: 0 });
 
   const analyze = async file => {
     setState({ status: "analyzing", rows: [], unmatched: [], error: "", imported: 0 });
@@ -63,7 +63,22 @@ export default function useScheduleImport(teachers) {
       const teacherIds = [...new Set(state.rows.map(row => row.teacher_id))];
       await Promise.all(teacherIds.map(teacher_id => base44.entities.WeeklySchedule.deleteMany({ teacher_id })));
       for (let index = 0; index < state.rows.length; index += 500) await base44.entities.WeeklySchedule.bulkCreate(state.rows.slice(index, index + 500));
-      setState(current => ({ ...current, status: "done", imported: current.rows.length }));
+      // סנכרון נתוני מורים בפועל: שעות שבועיות, ימים עמוסים וימי חופש
+      const toMinutes = time => { const [h, m] = time.split(":").map(Number); return h * 60 + m; };
+      const teacherUpdates = teacherIds.map(teacherId => {
+        const dayMinutes = {};
+        state.rows.filter(row => row.teacher_id === teacherId).forEach(row => {
+          dayMinutes[row.day_of_week] = (dayMinutes[row.day_of_week] || 0) + (toMinutes(row.end_time) - toMinutes(row.start_time));
+        });
+        return {
+          id: teacherId,
+          weekly_teaching_hours: Math.round(Object.values(dayMinutes).reduce((sum, min) => sum + min, 0) / 6) / 10,
+          days_off: [0, 1, 2, 3, 4].filter(day => !dayMinutes[day]),
+          busy_days: [0, 1, 2, 3, 4].filter(day => (dayMinutes[day] || 0) > 360)
+        };
+      });
+      await base44.entities.TeacherProfile.bulkUpdate(teacherUpdates);
+      setState(current => ({ ...current, status: "done", imported: current.rows.length, updatedTeachers: teacherUpdates.length }));
     } catch (error) {
       setState(current => ({ ...current, status: "preview", error: error.message || "שמירת המערכות נכשלה" }));
     }
