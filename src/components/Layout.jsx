@@ -83,15 +83,15 @@ export default function Layout() {
   const navItems = management ? [...managementNav, ...teacherNav.filter(n => n.to !== "/")] : teacherNav;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="mobile-compact min-h-screen bg-background">
       {/* Top bar - mobile */}
       <header className="lg:hidden sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="flex items-center justify-between px-4 h-14">
-          <button onClick={() => setMobileOpen(true)} className="p-2 -mr-2">
+        <div className="flex items-center justify-between px-3 h-12">
+          <button onClick={() => setMobileOpen(true)} className="min-w-11 min-h-11 flex items-center justify-center -mr-2" aria-label="פתיחת תפריט">
             <Menu className="w-5 h-5" />
           </button>
           <span className="font-bold text-sm">תורנויות מורים</span>
-          <button onClick={toggleDark} className="p-2">
+          <button onClick={toggleDark} className="min-w-11 min-h-11 flex items-center justify-center" aria-label={dark ? "מעבר למצב בהיר" : "מעבר למצב כהה"}>
             {dark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </button>
         </div>
@@ -101,10 +101,10 @@ export default function Layout() {
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
-          <nav className="absolute right-0 top-0 bottom-0 w-72 bg-background border-l border-border p-4 overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
+          <nav className="absolute right-0 top-0 bottom-0 w-64 bg-background border-l border-border p-3 overflow-y-auto">
+            <div className="flex items-center justify-between mb-3">
               <span className="font-bold">תפריט</span>
-              <button onClick={() => setMobileOpen(false)}><X className="w-5 h-5" /></button>
+              <button onClick={() => setMobileOpen(false)} className="min-w-11 min-h-11 flex items-center justify-center" aria-label="סגירת תפריט"><X className="w-5 h-5" /></button>
             </div>
             <div className="space-y-1">
               {navItems.map(item => (
@@ -143,7 +143,7 @@ export default function Layout() {
 
         {/* Content */}
         <main className="flex-1 min-w-0">
-          <div className="p-4 lg:p-6 max-w-7xl mx-auto">
+          <div className="p-3 sm:p-4 lg:p-6 max-w-7xl mx-auto">
             <Outlet />
           </div>
         </main>
@@ -159,7 +159,7 @@ function NavItem({ to, label, icon: Icon, badge, onClick }) {
       end={to === "/"}
       onClick={onClick}
       className={({ isActive }) =>
-        `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+        `flex min-h-11 items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
           isActive ? "bg-primary text-primary-foreground font-semibold" : "hover:bg-muted text-foreground"
         }`
       }

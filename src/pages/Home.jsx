@@ -208,8 +208,8 @@ function CompactCalendar({ assignments, today }) {
   const isoToday = today;
 
   return (
-    <div className="rounded-xl border border-border p-4 bg-card">
-      <div className="flex items-center justify-between mb-3">
+    <div className="rounded-xl border border-border p-3 sm:p-4 bg-card">
+      <div className="flex items-center justify-between mb-2 sm:mb-3">
         <button onClick={() => setViewDate(new Date(year, month - 1, 1))} className="p-1 rounded hover:bg-muted">→</button>
         <h3 className="font-bold text-sm">{HEBREW_MONTHS[month]} {year}</h3>
         <button onClick={() => setViewDate(new Date(year, month + 1, 1))} className="p-1 rounded hover:bg-muted">←</button>
@@ -217,7 +217,7 @@ function CompactCalendar({ assignments, today }) {
       <div className="grid grid-cols-5 gap-1 text-center">
         {weekDays.map(d => <div key={d} className="text-xs text-muted-foreground py-1">{d}</div>)}
         {cells.map((cell, i) => (
-          <div key={i} className="aspect-square flex items-center justify-center">
+          <div key={i} className="h-10 sm:h-auto sm:aspect-square flex items-center justify-center">
             {cell && (
               <div className={`w-8 h-8 flex items-center justify-center rounded-full text-xs relative ${
                 cell.dateStr === isoToday ? "bg-primary text-primary-foreground font-bold" :
