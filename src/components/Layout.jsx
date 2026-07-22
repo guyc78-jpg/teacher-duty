@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { getCurrentTeacher, isManagement, isAdmin } from "@/lib/dutyUtils";
 import { Menu, X, Bell, Calendar, Users, User, LogOut, Settings, ClipboardList, BarChart3, AlertTriangle, Repeat, Home as HomeIcon, ShieldCheck, Moon, Sun } from "lucide-react";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import PushToggle from "@/components/PushToggle";
 import { ROLE_LABELS } from "@/components/onboarding/onboardingConstants";
 
 export default function Layout() {
@@ -101,9 +102,12 @@ export default function Layout() {
             <Menu className="w-5 h-5" />
           </button>
           <span className="font-bold text-sm">תורנויות מורים</span>
-          <button onClick={toggleDark} className="min-w-11 min-h-11 flex items-center justify-center" aria-label={dark ? "מעבר למצב בהיר" : "מעבר למצב כהה"}>
-            {dark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </button>
+          <div className="flex items-center">
+            <PushToggle />
+            <button onClick={toggleDark} className="min-w-11 min-h-11 flex items-center justify-center" aria-label={dark ? "מעבר למצב בהיר" : "מעבר למצב כהה"}>
+              {dark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -149,6 +153,7 @@ export default function Layout() {
             ))}
           </nav>
           <div className="p-3 border-t border-border">
+            <PushToggle variant="row" />
             <button onClick={toggleDark} className="flex items-center gap-2 w-full px-3 py-2 rounded-lg hover:bg-muted text-sm">
               {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               {dark ? "מצב בהיר" : "מצב כהה"}

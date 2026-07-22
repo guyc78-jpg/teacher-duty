@@ -1,0 +1,38 @@
+{
+  "name": "PushSubscription",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "title": "\u05de\u05e9\u05ea\u05de\u05e9"
+    },
+    "endpoint": {
+      "type": "string",
+      "title": "Endpoint"
+    },
+    "p256dh": {
+      "type": "string",
+      "title": "\u05de\u05e4\u05ea\u05d7 p256dh"
+    },
+    "auth": {
+      "type": "string",
+      "title": "\u05de\u05e4\u05ea\u05d7 auth"
+    },
+    "user_agent": {
+      "type": "string",
+      "title": "\u05d3\u05e4\u05d3\u05e4\u05df"
+    }
+  },
+  "required": [
+    "user_id",
+    "endpoint",
+    "p256dh",
+    "auth"
+  ],
+  "access": {
+    "read": "owner",
+    "create": "all_authenticated",
+    "update": "owner",
+    "delete": "owner"
+  }
+}
