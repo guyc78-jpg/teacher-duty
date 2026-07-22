@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { getCurrentTeacher, isManagement } from "@/lib/dutyUtils";
-import { Plus, X, Edit, Save } from "lucide-react";
+import { Plus, X, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import BreaksSettings from "@/components/settings/BreaksSettings";
 import StationsSettings from "@/components/settings/StationsSettings";
+import GeneralSettings from "@/components/settings/GeneralSettings";
 
 export default function SettingsPage() {
   const [teacher, setTeacher] = useState(null);
@@ -158,45 +159,6 @@ function RuleModal({ rule, onClose, onSaved }) {
         <Button onClick={submit} disabled={saving} className="w-full h-11">{saving ? "שומר..." : "שמור"}</Button>
       </div>
     </Modal>
-  );
-}
-
-function GeneralSettings() {
-  const [settings, setSettings] = useState(null);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    (async () => {
-      const s = await base44.entities.SystemSettings.list();
-      setSettings(s[0] || {});
-    })();
-  }, []);
-
-  const save = async () => {
-    setSaving(true);
-    try {
-      if (settings.id) await base44.entities.SystemSettings.update(settings.id, settings);
-      else await base44.entities.SystemSettings.create(settings);
-      alert("נשמר");
-    } catch (err) { alert("שגיאה: " + (err.message || "")); }
-    finally { setSaving(false); }
-  };
-
-  if (!settings) return <div className="flex justify-center py-8"><div className="w-6 h-6 border-4 border-muted border-t-primary rounded-full animate-spin" /></div>;
-
-  return (
-    <div className="space-y-3">
-      <div><Label>שם בית הספר</Label><Input value={settings.school_name || ""} onChange={e => setSettings(s => ({ ...s, school_name: e.target.value }))} /></div>
-      <div><Label>שעת תזכורת בוקר</Label><Input type="time" value={settings.morning_reminder_time || "08:00"} onChange={e => setSettings(s => ({ ...s, morning_reminder_time: e.target.value }))} /></div>
-      <div className="grid grid-cols-2 gap-3">
-        <div><Label>דקות לפני תורנות</Label><Input type="number" value={settings.pre_duty_reminder_minutes ?? 10} onChange={e => setSettings(s => ({ ...s, pre_duty_reminder_minutes: Number(e.target.value) }))} /></div>
-        <div><Label>דקות אי־אישור</Label><Input type="number" value={settings.missing_arrival_threshold_minutes ?? 5} onChange={e => setSettings(s => ({ ...s, missing_arrival_threshold_minutes: Number(e.target.value) }))} /></div>
-      </div>
-      <div><Label>טלפון רכז ביטחון</Label><Input value={settings.security_coordinator_phone || ""} onChange={e => setSettings(s => ({ ...s, security_coordinator_phone: e.target.value }))} /></div>
-      <div><Label>טלפון בית ספר</Label><Input value={settings.school_contact_phone || ""} onChange={e => setSettings(s => ({ ...s, school_contact_phone: e.target.value }))} /></div>
-      <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={settings.pilot_mode_enabled || false} onChange={e => setSettings(s => ({ ...s, pilot_mode_enabled: e.target.checked }))} /> מצב הרצה</label>
-      <Button onClick={save} disabled={saving} className="w-full h-11"><Save className="w-4 h-4 ml-2" />{saving ? "שומר..." : "שמור הגדרות"}</Button>
-    </div>
   );
 }
 
