@@ -1,6 +1,7 @@
 import React from "react";
-import { Edit, X, Trash2 } from "lucide-react";
+import { Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import CloseButton from "@/components/ui/close-button";
 import { DIVISION_LABELS } from "@/lib/dutyUtils";
 import TeacherScheduleSection from "@/components/teachers/TeacherScheduleSection";
 
@@ -25,7 +26,7 @@ export default function TeacherDetailsCard({ teacher, onClose, onEdit, onDelete 
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={onEdit}><Edit className="h-4 w-4" /> עריכה</Button>
             {onDelete && <Button size="sm" variant="destructive" onClick={onDelete}><Trash2 className="h-4 w-4" /> מחיקה</Button>}
-            <Button size="icon" variant="ghost" onClick={onClose}><X className="h-5 w-5" /></Button>
+            <CloseButton onClick={onClose} label="סגירת פרטי המורה" />
           </div>
         </div>
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-xl border border-border p-4 sm:grid-cols-3">

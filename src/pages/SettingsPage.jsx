@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { getCurrentTeacher, isManagement } from "@/lib/dutyUtils";
-import { Plus, X, Edit } from "lucide-react";
+import { Plus, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import CloseButton from "@/components/ui/close-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import BreaksSettings from "@/components/settings/BreaksSettings";
@@ -169,7 +170,7 @@ function Modal({ title, onClose, children }) {
       <div className="relative bg-background rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md max-h-[85vh] overflow-y-auto p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-lg">{title}</h2>
-          <button onClick={onClose}><X className="w-5 h-5" /></button>
+          <CloseButton onClick={onClose} label="סגירת חלון" />
         </div>
         {children}
       </div>

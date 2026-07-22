@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Camera, Phone, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import CloseButton from "@/components/ui/close-button";
 import { Textarea } from "@/components/ui/textarea";
 import { Image } from "@/components/ui/image";
 import { BREAK_TYPES, INCIDENT_CATEGORIES, SEVERITY_LABELS, formatDate, formatTime, formatTimeRange, todayISO } from "@/lib/dutyUtils";
@@ -62,7 +63,7 @@ export default function CreateIncidentModal({ teacher, securityPhone, onClose, o
       <div className="relative w-full sm:max-w-md max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-background p-4">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-bold text-lg">דיווח אירוע חריג</h2>
-          <button onClick={onClose} aria-label="סגירת חלון"><X className="w-5 h-5" /></button>
+          <CloseButton onClick={onClose} label="סגירת דיווח אירוע" />
         </div>
 
         <div className="mb-3 rounded-lg bg-muted p-2.5 text-xs">

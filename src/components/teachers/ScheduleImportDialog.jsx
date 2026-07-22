@@ -1,6 +1,7 @@
 import React from "react";
-import { FileSpreadsheet, Loader2, X } from "lucide-react";
+import { FileSpreadsheet, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import CloseButton from "@/components/ui/close-button";
 import useScheduleImport from "@/components/teachers/useScheduleImport";
 
 export default function ScheduleImportDialog({ teachers, onClose }) {
@@ -13,7 +14,7 @@ export default function ScheduleImportDialog({ teachers, onClose }) {
       <div className="relative bg-background rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div><h2 className="font-bold text-lg">ייבוא מערכות שעות</h2><p className="text-sm text-muted-foreground">Excel ‏(.xlsx) או PDF, בהתאמה לפי שם מלא</p></div>
-          <button onClick={onClose} disabled={busy}><X className="w-5 h-5" /></button>
+          <CloseButton onClick={onClose} disabled={busy} label="סגירת חלון הייבוא" />
         </div>
         {importer.status === "idle" && <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border p-8 cursor-pointer hover:bg-muted/50">
           <FileSpreadsheet className="w-10 h-10 text-primary" /><span className="font-medium">בחירת קובץ</span><span className="text-xs text-muted-foreground">הקובץ לא יישמר לאחר סיום הייבוא</span>

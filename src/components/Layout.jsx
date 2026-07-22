@@ -2,8 +2,9 @@ import React, { useState, useEffect } from "react";
 import { Outlet, NavLink, useNavigate, Navigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { getCurrentTeacher, isManagement, isAdmin } from "@/lib/dutyUtils";
-import { Menu, X, Bell, Calendar, Users, User, LogOut, Settings, ClipboardList, BarChart3, AlertTriangle, Repeat, Home as HomeIcon, ShieldCheck, Moon, Sun } from "lucide-react";
+import { Menu, Bell, Calendar, Users, User, LogOut, Settings, ClipboardList, BarChart3, AlertTriangle, Repeat, Home as HomeIcon, ShieldCheck, Moon, Sun } from "lucide-react";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import CloseButton from "@/components/ui/close-button";
 import PushToggle from "@/components/PushToggle";
 import { ROLE_LABELS } from "@/components/onboarding/onboardingConstants";
 
@@ -118,7 +119,7 @@ export default function Layout() {
           <nav className="absolute bottom-0 right-0 top-0 flex w-72 flex-col overflow-y-auto border-l border-border bg-background p-3">
             <div className="flex items-center justify-between">
               <span className="font-bold">תפריט</span>
-              <button onClick={() => setMobileOpen(false)} className="flex min-h-11 min-w-11 items-center justify-center" aria-label="סגירת תפריט"><X className="h-5 w-5" /></button>
+              <CloseButton onClick={() => setMobileOpen(false)} label="סגירת תפריט" />
             </div>
             <div className="mb-3 rounded-xl bg-muted p-3">
               <div className="flex items-center gap-3">
