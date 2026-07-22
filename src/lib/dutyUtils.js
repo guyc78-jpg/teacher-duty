@@ -149,5 +149,5 @@ export function isCoordinator(teacher) {
   return teacher?.role === "coordinator" || teacher?.role === "admin";
 }
 export function isManagement(teacher) {
-  return ["admin", "coordinator"].includes(teacher?.role);
+  return ["management", "admin", "coordinator"].includes(teacher?.role);
 }

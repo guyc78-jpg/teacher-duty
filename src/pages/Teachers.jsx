@@ -147,6 +147,7 @@ function TeacherModal({ teacher: edit, onClose, onSaved }) {
                 <option value="homeroom">מחנך</option>
                 <option value="coordinator">רכז</option>
                 <option value="admin">מנהל מערכת</option>
+                <option value="management">הנהלה</option>
               </select>
             </div>
           </div>
