@@ -1,13 +1,22 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { getCurrentTeacher, DIVISION_LABELS, isManagement } from "@/lib/dutyUtils";
-import { Plus, Search, X, Edit } from "lucide-react";
+import { Plus, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import ScheduleImportButton from "@/components/teachers/ScheduleImportButton";
 import PendingApprovals from "@/components/teachers/PendingApprovals";
-import TeacherScheduleSection from "@/components/teachers/TeacherScheduleSection";
+import TeacherFilters from "@/components/teachers/TeacherFilters";
+import TeacherRow from "@/components/teachers/TeacherRow";
+import TeacherDetailsCard from "@/components/teachers/TeacherDetailsCard";
+
+function compareByLastName(a, b) {
+  const split = name => { const parts = (name || "").trim().split(/\s+/); return { last: parts.pop() || "", first: parts.join(" ") }; };
+  const nameA = split(a.full_name);
+  const nameB = split(b.full_name);
+  return nameA.last.localeCompare(nameB.last, "he") || nameA.first.localeCompare(nameB.first, "he");
+}
 
 export default function Teachers() {
   const [teacher, setTeacher] = useState(null);
@@ -16,6 +25,8 @@ export default function Teachers() {
   const [search, setSearch] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [selected, setSelected] = useState(null);
+  const [filters, setFilters] = useState({ division: "", subject: "", exempt: "", status: "" });
 
   const load = useCallback(async () => {
     const t = await getCurrentTeacher();
@@ -32,9 +43,15 @@ export default function Teachers() {
   if (loading) return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" /></div>;
   if (!teacher || !isManagement(teacher)) return <p className="text-center py-20 text-muted-foreground">אין הרשאה.</p>;
 
-  const filtered = teachers.filter(t =>
-    t.full_name?.includes(search) || t.email?.includes(search) || t.employee_id?.includes(search) || t.subject?.includes(search)
-  );
+  const subjects = [...new Set(teachers.flatMap(t => [t.subject, ...(t.additional_subjects || [])]).filter(Boolean))].sort((a, b) => a.localeCompare(b, "he"));
+  const filtered = teachers.filter(t => {
+    const matchesSearch = t.full_name?.includes(search) || t.email?.includes(search) || t.employee_id?.includes(search) || t.subject?.includes(search);
+    const matchesDivision = !filters.division || t.division === filters.division;
+    const matchesSubject = !filters.subject || t.subject === filters.subject || t.additional_subjects?.includes(filters.subject);
+    const matchesExempt = !filters.exempt || (filters.exempt === "yes" ? t.is_exempt : !t.is_exempt);
+    const matchesStatus = !filters.status || (filters.status === "active" ? t.is_active : !t.is_active);
+    return matchesSearch && matchesDivision && matchesSubject && matchesExempt && matchesStatus;
+  }).sort(compareByLastName);
 
   return (
     <div className="space-y-4 pb-4">
@@ -50,38 +67,29 @@ export default function Teachers() {
 
       <PendingApprovals onChanged={load} />
 
-      <div className="relative">
-        <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="חיפוש מורה..." className="pr-10" />
+      <div className="space-y-2 rounded-xl border border-border bg-card p-3">
+        <div className="relative">
+          <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="חיפוש מורה..." className="pr-10" />
+        </div>
+        <TeacherFilters filters={filters} onChange={setFilters} subjects={subjects} />
       </div>
 
-      <div className="space-y-2">
-        {filtered.map(t => (
-          <div key={t.id} className="rounded-xl border border-border p-3 bg-card">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium truncate">{t.full_name}</span>
-                  {!t.is_active && <span className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground">לא פעיל</span>}
-                  {t.is_exempt && <span className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground">פטור</span>}
-                  {t.is_sport_teacher && <span className="text-xs px-1.5 py-0.5 rounded bg-primary/10 text-primary">ספורט</span>}
-                </div>
-                <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-                  <span>{t.email}</span>
-                  <span>· {DIVISION_LABELS[t.division]}</span>
-                  <span>· {t.subject || "—"}</span>
-                  <span>· {t.weekly_teaching_hours} שעות</span>
-                </div>
-              </div>
-              <Button variant="outline" size="sm" onClick={() => { setEditing(t); setShowAdd(true); }}>
-                <Edit className="w-3.5 h-3.5" />
-              </Button>
-            </div>
-            <TeacherScheduleSection teacherId={t.id} />
-          </div>
-        ))}
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(5rem,0.7fr)_4rem_auto] gap-2 border-b border-border bg-muted/50 px-3 py-2 text-xs font-medium text-muted-foreground sm:grid-cols-[minmax(0,1.3fr)_minmax(7rem,1fr)_6rem_5rem_auto]">
+          <span>שם</span><span>מקצוע</span><span>שעות</span><span>סטטוס</span><span className="hidden sm:block" />
+        </div>
+        {filtered.map(t => <TeacherRow key={t.id} teacher={t} onOpen={setSelected} />)}
+        {filtered.length === 0 && <p className="py-10 text-center text-sm text-muted-foreground">לא נמצאו מורים התואמים לסינון.</p>}
       </div>
 
+      {selected && (
+        <TeacherDetailsCard
+          teacher={selected}
+          onClose={() => setSelected(null)}
+          onEdit={() => { setEditing(selected); setSelected(null); setShowAdd(true); }}
+        />
+      )}
       {showAdd && (
         <TeacherModal teacher={editing} onClose={() => setShowAdd(false)} onSaved={() => { setShowAdd(false); load(); }} />
       )}

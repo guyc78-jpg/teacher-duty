@@ -3,6 +3,8 @@ import { base44 } from "@/api/base44Client";
 import { getCurrentTeacher, formatDateWithDay, formatTimeRange, todayISO, isSchoolDay, BREAK_TYPES, STATUS_LABELS, isManagement } from "@/lib/dutyUtils";
 import { Users, AlertTriangle, Repeat, Clock, MapPin, CheckCircle, XCircle, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
+import AdminAlerts from "@/components/admin/AdminAlerts";
+import AdminSummaryCard from "@/components/admin/AdminSummaryCard";
 
 export default function AdminDashboard() {
   const [teacher, setTeacher] = useState(null);
@@ -45,13 +47,16 @@ export default function AdminDashboard() {
 
   const confirmed = arrivals.filter(a => a.status === "on_time" || a.status === "late").length;
   const lateArrivals = arrivals.filter(a => a.status === "late");
-  const pendingStations = todayAssignments.filter(a => a.status === "scheduled");
+  const uncoveredStations = todayAssignments.filter(a => !a.teacher_id);
+  const unconfirmedAssignments = todayAssignments.filter(a =>
+    a.teacher_id && !arrivals.some(arrival => arrival.assignment_id === a.id)
+  );
 
   const stats = [
     { label: "תורנויות היום", value: todayAssignments.length, icon: Clock, color: "text-primary" },
     { label: "אישורי הגעה", value: confirmed, icon: CheckCircle, color: "text-success" },
     { label: "איחורים", value: lateArrivals.length, icon: Clock, color: "text-warning" },
-    { label: "עמדות ממתינות", value: pendingStations.length, icon: Eye, color: "text-warning" },
+    { label: "אי־אישורי הגעה", value: unconfirmedAssignments.length, icon: Eye, color: "text-warning" },
     { label: "בקשות החלפה", value: swaps.length, icon: Repeat, color: "text-primary" },
     { label: "אירועים פתוחים", value: incidents.length, icon: AlertTriangle, color: "text-destructive" }
   ];
@@ -70,16 +75,13 @@ export default function AdminDashboard() {
         <p className="text-sm text-muted-foreground mt-1">{formatDateWithDay(todayISO())}</p>
       </div>
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-3 gap-3">
-        {stats.map(s => (
-          <div key={s.label} className="rounded-xl border border-border p-3 bg-card text-center">
-            <s.icon className={`w-5 h-5 mx-auto mb-1 ${s.color}`} />
-            <p className="text-2xl font-bold">{s.value}</p>
-            <p className="text-xs text-muted-foreground">{s.label}</p>
-          </div>
-        ))}
-      </div>
+      <AdminAlerts
+        uncoveredCount={uncoveredStations.length}
+        unconfirmedCount={unconfirmedAssignments.length}
+        incidentCount={incidents.length}
+      />
+
+      <AdminSummaryCard stats={stats} />
 
       {/* Today's assignments by break */}
       {Object.keys(byBreak).length > 0 ? (
@@ -96,12 +98,14 @@ export default function AdminDashboard() {
                     const arrival = arrivals.find(ar => ar.assignment_id === a.id);
                     const st = STATUS_LABELS[a.status] || STATUS_LABELS.scheduled;
                     return (
-                      <div key={a.id} className={`rounded-lg border p-3 ${a.status === "confirmed" ? "border-success/30 bg-success/5" : a.status === "scheduled" ? "border-warning/30 bg-warning/5" : "border-border bg-card"}`}>
+                      <div key={a.id} className={`rounded-lg border p-3 ${!a.teacher_id ? "border-destructive/30 bg-destructive/5" : a.status === "scheduled" ? "border-warning/30 bg-warning/5" : "border-border bg-card"}`}>
                         <div className="flex items-center justify-between gap-2 mb-1">
                           <span className="font-medium text-sm">{a.station_name}</span>
                           {a.status === "confirmed" ? <CheckCircle className="w-4 h-4 text-success" /> : <Clock className="w-4 h-4 text-warning" />}
                         </div>
-                        <p className="text-sm text-muted-foreground">{a.teacher_name}</p>
+                        <p className={`text-sm ${a.teacher_id ? "text-muted-foreground" : "font-medium text-destructive"}`}>
+                          {a.teacher_name || "ללא כיסוי"}
+                        </p>
                         <div className="flex items-center justify-between mt-1">
                           <span className="text-xs text-muted-foreground">{formatTimeRange(a.start_time, a.end_time)}</span>
                           {arrival?.status === "late" && <span className="text-xs text-warning">איחור</span>}
