@@ -1,17 +1,14 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { getCurrentTeacher, DIVISION_LABELS } from "@/lib/dutyUtils";
-import { saveOnboarding } from "@/functions/saveOnboarding";
 import { Button } from "@/components/ui/button";
-import { Check, Save, Edit, Clock } from "lucide-react";
+import { Edit, Clock } from "lucide-react";
 import ChangeRequestForm from "@/components/profile/ChangeRequestForm";
-import { NOTIF_PREF_LABELS, DEFAULT_PREFS, ROLE_LABELS, WEEK_DAYS, EXEMPTION_STATUS_LABELS, CHANGE_LABELS, formatChangeValue } from "@/components/onboarding/onboardingConstants";
+import NotificationPreferences from "@/components/profile/NotificationPreferences";
+import { ROLE_LABELS, WEEK_DAYS, EXEMPTION_STATUS_LABELS, CHANGE_LABELS, formatChangeValue } from "@/components/onboarding/onboardingConstants";
 
 export default function Profile() {
   const [teacher, setTeacher] = useState(null);
-  const [prefs, setPrefs] = useState(DEFAULT_PREFS);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [editing, setEditing] = useState(false);
   const [pendingRequest, setPendingRequest] = useState(null);
   const [message, setMessage] = useState("");
@@ -20,31 +17,12 @@ export default function Profile() {
     const t = await getCurrentTeacher();
     setTeacher(t);
     if (t) {
-      if (t.preferences) {
-        try { setPrefs({ ...DEFAULT_PREFS, ...JSON.parse(t.preferences) }); } catch {}
-      }
       const reqs = await base44.entities.ProfileChangeRequest.filter({ teacher_id: t.id, status: "pending" });
       setPendingRequest(reqs[0] || null);
     }
   }, []);
 
   useEffect(() => { load(); }, [load]);
-
-  const togglePref = (key) => {
-    if (NOTIF_PREF_LABELS[key].operational) return;
-    setPrefs(p => ({ ...p, [key]: !p[key] }));
-    setSaved(false);
-  };
-
-  const savePrefs = async () => {
-    setSaving(true);
-    try {
-      await saveOnboarding({ action: "preferences", data: { preferences: JSON.stringify(prefs) } });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch (err) { alert("שגיאה בשמירה: " + (err.response?.data?.error || err.message || "")); }
-    finally { setSaving(false); }
-  };
 
   if (!teacher) return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" /></div>;
 
@@ -108,32 +86,7 @@ export default function Profile() {
         )}
       </div>
 
-      <div className="rounded-xl border border-border p-4 bg-card">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-bold">העדפות התראות</h2>
-          <Button size="sm" onClick={savePrefs} disabled={saving}>
-            {saved ? <><Check className="w-4 h-4 ml-1" /> נשמר</> : <><Save className="w-4 h-4 ml-1" /> שמור</>}
-          </Button>
-        </div>
-        <div className="space-y-2">
-          {Object.entries(NOTIF_PREF_LABELS).map(([key, { label, operational }]) => (
-            <label key={key} className="flex items-center justify-between gap-2 py-2 border-b border-border last:border-0">
-              <div className="flex items-center gap-2">
-                <span className="text-sm">{label}</span>
-                {operational && <span className="text-xs px-1.5 py-0.5 rounded bg-warning/10 text-warning">קריטית</span>}
-              </div>
-              <button
-                onClick={() => togglePref(key)}
-                disabled={operational}
-                className={`w-10 h-6 rounded-full transition-colors relative ${prefs[key] ? "bg-primary" : "bg-muted"} ${operational ? "opacity-60 cursor-not-allowed" : ""}`}
-              >
-                <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${prefs[key] ? "right-0.5" : "right-4"}`} />
-              </button>
-            </label>
-          ))}
-        </div>
-        <p className="text-xs text-muted-foreground mt-3">התראות תפעוליות קריטיות נשארות פעילות תמיד.</p>
-      </div>
+      <NotificationPreferences teacher={teacher} />
     </div>
   );
 }

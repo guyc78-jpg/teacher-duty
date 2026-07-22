@@ -30,9 +30,9 @@ export const NOTIF_PREF_LABELS = {
   notify_swap_request: { label: "בקשת החלפה", operational: false },
   notify_swap_accepted: { label: "החלפה התקבלה", operational: false },
   notify_swap_rejected: { label: "החלפה נדחתה/בוטלה", operational: false },
-  notify_uncovered_station: { label: "עמדה ללא כיסוי", operational: false },
-  notify_missing_arrival: { label: "אי־אישור הגעה", operational: true },
-  notify_incident: { label: "אירוע חריג", operational: true }
+  notify_uncovered_station: { label: "עמדה ללא כיסוי", operational: false, roles: ["management", "admin", "coordinator"] },
+  notify_missing_arrival: { label: "אי־אישור הגעה", operational: true, roles: ["management", "admin", "coordinator"] },
+  notify_incident: { label: "אירוע חריג", operational: true, roles: ["management", "admin", "coordinator"] }
 };
 
 export const DEFAULT_PREFS = Object.fromEntries(
