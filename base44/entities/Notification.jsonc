@@ -1,0 +1,65 @@
+{
+  "name": "Notification",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "title": "\u05de\u05e9\u05ea\u05de\u05e9"
+    },
+    "title": {
+      "type": "string",
+      "title": "\u05db\u05d5\u05ea\u05e8\u05ea"
+    },
+    "body": {
+      "type": "string",
+      "title": "\u05ea\u05d5\u05db\u05df"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "duty_reminder",
+        "plan_published",
+        "assignment_change",
+        "swap_request",
+        "swap_accepted",
+        "swap_rejected",
+        "swap_cancelled",
+        "uncovered_station",
+        "missing_arrival",
+        "incident"
+      ],
+      "title": "\u05e1\u05d5\u05d2"
+    },
+    "link": {
+      "type": "string",
+      "title": "\u05e7\u05d9\u05e9\u05d5\u05e8 \u05dc\u05de\u05e1\u05da"
+    },
+    "is_read": {
+      "type": "boolean",
+      "default": false,
+      "title": "\u05e0\u05e7\u05e8\u05d0"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "\u05d6\u05de\u05df \u05d9\u05e6\u05d9\u05e8\u05d4"
+    },
+    "is_operational": {
+      "type": "boolean",
+      "default": false,
+      "title": "\u05ea\u05e4\u05e2\u05d5\u05dc\u05d9\u05ea \u05e7\u05e8\u05d9\u05d8\u05d9\u05ea"
+    }
+  },
+  "required": [
+    "user_id",
+    "title",
+    "body",
+    "type"
+  ],
+  "access": {
+    "read": "owner",
+    "create": "all_authenticated",
+    "update": "owner",
+    "delete": "owner"
+  }
+}

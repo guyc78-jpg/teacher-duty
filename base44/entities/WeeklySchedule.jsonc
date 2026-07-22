@@ -1,0 +1,72 @@
+{
+  "name": "WeeklySchedule",
+  "type": "object",
+  "properties": {
+    "teacher_id": {
+      "type": "string",
+      "title": "\u05de\u05d5\u05e8\u05d4"
+    },
+    "day_of_week": {
+      "type": "number",
+      "enum": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "title": "\u05d9\u05d5\u05dd \u05d1\u05e9\u05d1\u05d5\u05e2 (0=\u05e8\u05d0\u05e9\u05d5\u05df)"
+    },
+    "start_time": {
+      "type": "string",
+      "title": "\u05e9\u05e2\u05ea \u05d4\u05ea\u05d7\u05dc\u05d4 (HH:MM)"
+    },
+    "end_time": {
+      "type": "string",
+      "title": "\u05e9\u05e2\u05ea \u05e1\u05d9\u05d5\u05dd (HH:MM)"
+    },
+    "lesson_number": {
+      "type": "number",
+      "title": "\u05de\u05e1\u05e4\u05e8 \u05e9\u05d9\u05e2\u05d5\u05e8"
+    },
+    "class_name": {
+      "type": "string",
+      "title": "\u05db\u05d9\u05ea\u05d4"
+    },
+    "division": {
+      "type": "string",
+      "enum": [
+        "middle",
+        "high"
+      ],
+      "title": "\u05d7\u05d8\u05d9\u05d1\u05d4"
+    },
+    "valid_from": {
+      "type": "string",
+      "format": "date",
+      "title": "\u05ea\u05d5\u05e7\u05e3 \u05de"
+    },
+    "valid_until": {
+      "type": "string",
+      "format": "date",
+      "title": "\u05ea\u05d5\u05e7\u05e3 \u05e2\u05d3"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "title": "\u05e4\u05e2\u05d9\u05dc"
+    }
+  },
+  "required": [
+    "teacher_id",
+    "day_of_week",
+    "start_time",
+    "end_time"
+  ],
+  "access": {
+    "read": "all_authenticated",
+    "create": "admin",
+    "update": "admin",
+    "delete": "admin"
+  }
+}

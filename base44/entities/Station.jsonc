@@ -1,0 +1,111 @@
+{
+  "name": "Station",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "\u05e9\u05dd \u05d4\u05e2\u05de\u05d3\u05d4"
+    },
+    "division": {
+      "type": "string",
+      "enum": [
+        "middle",
+        "high",
+        "both"
+      ],
+      "title": "\u05d7\u05d8\u05d9\u05d1\u05d4",
+      "default": "both"
+    },
+    "level": {
+      "type": "string",
+      "title": "\u05de\u05e4\u05dc\u05e1"
+    },
+    "area": {
+      "type": "string",
+      "title": "\u05d0\u05d6\u05d5\u05e8"
+    },
+    "active_break_types": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "big",
+          "medium",
+          "small"
+        ]
+      },
+      "title": "\u05e1\u05d5\u05d2\u05d9 \u05d4\u05e4\u05e1\u05e7\u05d5\u05ea \u05e4\u05e2\u05d9\u05dc\u05d9\u05dd",
+      "default": [
+        "big",
+        "medium",
+        "small"
+      ]
+    },
+    "staffing_requirements": {
+      "type": "object",
+      "title": "\u05d3\u05e8\u05d9\u05e9\u05d5\u05ea \u05d0\u05d9\u05d5\u05e9 \u05dc\u05e4\u05d9 \u05e1\u05d5\u05d2 \u05d4\u05e4\u05e1\u05e7\u05d4",
+      "properties": {
+        "big": {
+          "type": "number",
+          "default": 1
+        },
+        "medium": {
+          "type": "number",
+          "default": 1
+        },
+        "small": {
+          "type": "number",
+          "default": 1
+        }
+      }
+    },
+    "load_level": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "title": "\u05e8\u05de\u05ea \u05e2\u05d5\u05de\u05e1",
+      "default": "medium"
+    },
+    "is_sport_station": {
+      "type": "boolean",
+      "title": "\u05e2\u05de\u05d3\u05ea \u05e1\u05e4\u05d5\u05e8\u05d8",
+      "default": false
+    },
+    "allowed_teachers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "\u05de\u05d5\u05e8\u05d9\u05dd \u05de\u05d5\u05ea\u05e8\u05d9\u05dd"
+    },
+    "preferred_teachers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "\u05de\u05d5\u05e8\u05d9\u05dd \u05de\u05d5\u05e2\u05d3\u05e4\u05d9\u05dd"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "title": "\u05e4\u05e2\u05d9\u05dc"
+    },
+    "sort_order": {
+      "type": "number",
+      "default": 0,
+      "title": "\u05e1\u05d3\u05e8 \u05ea\u05e6\u05d5\u05d2\u05d4"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "access": {
+    "read": "all_authenticated",
+    "create": "admin",
+    "update": "admin",
+    "delete": "admin"
+  }
+}

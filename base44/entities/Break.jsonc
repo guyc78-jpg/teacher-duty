@@ -1,0 +1,71 @@
+{
+  "name": "Break",
+  "type": "object",
+  "properties": {
+    "break_type": {
+      "type": "string",
+      "enum": [
+        "big",
+        "medium",
+        "small"
+      ],
+      "title": "\u05e1\u05d5\u05d2 \u05d4\u05e4\u05e1\u05e7\u05d4",
+      "default": "small"
+    },
+    "name": {
+      "type": "string",
+      "title": "\u05e9\u05dd \u05d4\u05d4\u05e4\u05e1\u05e7\u05d4"
+    },
+    "start_time": {
+      "type": "string",
+      "title": "\u05e9\u05e2\u05ea \u05d4\u05ea\u05d7\u05dc\u05d4 (HH:MM)"
+    },
+    "end_time": {
+      "type": "string",
+      "title": "\u05e9\u05e2\u05ea \u05e1\u05d9\u05d5\u05dd (HH:MM)"
+    },
+    "active_days": {
+      "type": "array",
+      "items": {
+        "type": "number",
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "title": "\u05d9\u05de\u05d9\u05dd \u05e4\u05e2\u05d9\u05dc\u05d9\u05dd (0=\u05e8\u05d0\u05e9\u05d5\u05df)",
+      "default": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "title": "\u05e4\u05e2\u05d9\u05dc"
+    },
+    "sort_order": {
+      "type": "number",
+      "default": 0,
+      "title": "\u05e1\u05d3\u05e8 \u05ea\u05e6\u05d5\u05d2\u05d4"
+    }
+  },
+  "required": [
+    "break_type",
+    "name",
+    "start_time",
+    "end_time"
+  ],
+  "access": {
+    "read": "all_authenticated",
+    "create": "admin",
+    "update": "admin",
+    "delete": "admin"
+  }
+}

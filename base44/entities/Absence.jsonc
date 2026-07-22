@@ -1,0 +1,49 @@
+{
+  "name": "Absence",
+  "type": "object",
+  "properties": {
+    "teacher_id": {
+      "type": "string",
+      "title": "\u05de\u05d5\u05e8\u05d4"
+    },
+    "teacher_name": {
+      "type": "string",
+      "title": "\u05e9\u05dd \u05de\u05d5\u05e8\u05d4"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "title": "\u05ea\u05d0\u05e8\u05d9\u05da \u05d4\u05ea\u05d7\u05dc\u05d4"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "title": "\u05ea\u05d0\u05e8\u05d9\u05da \u05e1\u05d9\u05d5\u05dd"
+    },
+    "reason": {
+      "type": "string",
+      "title": "\u05e1\u05d9\u05d1\u05d4"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "title": "\u05e1\u05d8\u05d8\u05d5\u05e1",
+      "default": "approved"
+    }
+  },
+  "required": [
+    "teacher_id",
+    "start_date",
+    "end_date"
+  ],
+  "access": {
+    "read": "all_authenticated",
+    "create": "all_authenticated",
+    "update": "admin",
+    "delete": "admin"
+  }
+}

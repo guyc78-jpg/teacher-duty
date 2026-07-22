@@ -1,0 +1,109 @@
+{
+  "name": "TeacherProfile",
+  "type": "object",
+  "properties": {
+    "full_name": {
+      "type": "string",
+      "title": "\u05e9\u05dd \u05de\u05dc\u05d0"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "title": "\u05d3\u05d5\u05d0\u05f4\u05dc"
+    },
+    "employee_id": {
+      "type": "string",
+      "title": "\u05de\u05d6\u05d4\u05d4 \u05e2\u05d5\u05d1\u05d3"
+    },
+    "division": {
+      "type": "string",
+      "enum": [
+        "middle",
+        "high"
+      ],
+      "title": "\u05d7\u05d8\u05d9\u05d1\u05d4",
+      "default": "high"
+    },
+    "subject": {
+      "type": "string",
+      "title": "\u05de\u05e7\u05e6\u05d5\u05e2"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "coordinator",
+        "teacher",
+        "homeroom"
+      ],
+      "title": "\u05ea\u05e4\u05e7\u05d9\u05d3 \u05de\u05e2\u05e8\u05db\u05ea",
+      "default": "teacher"
+    },
+    "is_homeroom": {
+      "type": "boolean",
+      "title": "\u05de\u05d7\u05e0\u05da",
+      "default": false
+    },
+    "is_sport_teacher": {
+      "type": "boolean",
+      "title": "\u05de\u05d5\u05e8\u05d4 \u05dc\u05e1\u05e4\u05d5\u05e8\u05d8",
+      "default": false
+    },
+    "weekly_teaching_hours": {
+      "type": "number",
+      "title": "\u05e9\u05e2\u05d5\u05ea \u05d4\u05d5\u05e8\u05d0\u05d4 \u05e9\u05d1\u05d5\u05e2\u05d9\u05d5\u05ea",
+      "default": 0
+    },
+    "is_active": {
+      "type": "boolean",
+      "title": "\u05e4\u05e2\u05d9\u05dc",
+      "default": true
+    },
+    "is_exempt": {
+      "type": "boolean",
+      "title": "\u05e4\u05d8\u05d5\u05e8 \u05de\u05ea\u05d5\u05e8\u05e0\u05d5\u05ea",
+      "default": false
+    },
+    "preferences": {
+      "type": "string",
+      "title": "\u05d4\u05e2\u05d3\u05e4\u05d5\u05ea"
+    },
+    "constraints": {
+      "type": "string",
+      "title": "\u05d0\u05d9\u05dc\u05d5\u05e6\u05d9\u05dd"
+    },
+    "allowed_stations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "\u05e2\u05de\u05d3\u05d5\u05ea \u05de\u05d5\u05ea\u05e8\u05d5\u05ea"
+    },
+    "fixed_stations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "\u05e2\u05de\u05d3\u05d5\u05ea \u05e7\u05d1\u05d5\u05e2\u05d5\u05ea"
+    },
+    "phone": {
+      "type": "string",
+      "title": "\u05d8\u05dc\u05e4\u05d5\u05df"
+    },
+    "user_id": {
+      "type": "string",
+      "title": "\u05de\u05e9\u05ea\u05de\u05e9 \u05de\u05e7\u05d5\u05e9\u05e8"
+    }
+  },
+  "required": [
+    "full_name",
+    "email",
+    "employee_id"
+  ],
+  "access": {
+    "read": "all_authenticated",
+    "create": "admin",
+    "update": "admin",
+    "delete": "admin"
+  }
+}
