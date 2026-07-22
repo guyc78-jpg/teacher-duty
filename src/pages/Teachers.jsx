@@ -38,6 +38,18 @@ export default function Teachers() {
 
   useEffect(() => { load(); }, [load]);
 
+  const isAdmin = teacher?.role === "admin";
+
+  const deleteTeacher = async (t) => {
+    if (!confirm(`למחוק את ${t.full_name} לצמיתות? פעולה זו תסיר גם את מערכת השעות שלו.`)) return;
+    try {
+      await base44.entities.WeeklySchedule.deleteMany({ teacher_id: t.id });
+      await base44.entities.TeacherProfile.delete(t.id);
+      setSelected(null);
+      load();
+    } catch (err) { alert("שגיאה: " + (err.message || "")); }
+  };
+
   if (loading) return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" /></div>;
   if (!teacher || !isManagement(teacher)) return <p className="text-center py-20 text-muted-foreground">אין הרשאה.</p>;
 
@@ -77,7 +89,7 @@ export default function Teachers() {
         <div className="grid grid-cols-[minmax(0,1fr)_minmax(5rem,0.7fr)_4rem_auto] gap-2 border-b border-border bg-muted/50 px-3 py-2 text-xs font-medium text-muted-foreground sm:grid-cols-[minmax(0,1.3fr)_minmax(7rem,1fr)_6rem_5rem_auto]">
           <span>שם</span><span>מקצוע</span><span>שעות</span><span>סטטוס</span><span className="hidden sm:block" />
         </div>
-        {filtered.map(t => <TeacherRow key={t.id} teacher={t} onOpen={setSelected} />)}
+        {filtered.map(t => <TeacherRow key={t.id} teacher={t} onOpen={setSelected} onDelete={isAdmin ? deleteTeacher : undefined} />)}
         {filtered.length === 0 && <p className="py-10 text-center text-sm text-muted-foreground">לא נמצאו מורים התואמים לסינון.</p>}
       </div>
 
@@ -86,15 +98,7 @@ export default function Teachers() {
           teacher={selected}
           onClose={() => setSelected(null)}
           onEdit={() => { setEditing(selected); setSelected(null); setShowAdd(true); }}
-          onDelete={teacher.role === "admin" ? async () => {
-            if (!confirm(`למחוק את ${selected.full_name} לצמיתות? פעולה זו תסיר גם את מערכת השעות שלו.`)) return;
-            try {
-              await base44.entities.WeeklySchedule.deleteMany({ teacher_id: selected.id });
-              await base44.entities.TeacherProfile.delete(selected.id);
-              setSelected(null);
-              load();
-            } catch (err) { alert("שגיאה: " + (err.message || "")); }
-          } : undefined}
+          onDelete={isAdmin ? () => deleteTeacher(selected) : undefined}
         />
       )}
       {showAdd && (
