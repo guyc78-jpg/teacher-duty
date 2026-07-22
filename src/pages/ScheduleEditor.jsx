@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
-import { getCurrentTeacher, formatDateWithDay, formatTimeRange, BREAK_TYPES, STATUS_LABELS, isManagement, isSchoolDay, schoolDaysInRange, HEBREW_DAYS } from "@/lib/dutyUtils";
+import { getCurrentTeacher, formatDateWithDay, isManagement, isSchoolDay } from "@/lib/dutyUtils";
 import { generateDutyDraft } from "@/functions/generateDutyDraft";
 import { publishDutyPlan } from "@/functions/publishDutyPlan";
-import { Plus, Calendar, Send, AlertTriangle, Loader2, Filter, Clock, MapPin, X } from "lucide-react";
+import { Plus, Send, AlertTriangle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import AssignmentGroups from "@/components/schedule/AssignmentGroups";
+import ScheduleValidationSummary from "@/components/schedule/ScheduleValidationSummary";
+import { validateAssignments } from "@/lib/scheduleValidation";
 
 export default function ScheduleEditor() {
   const [teacher, setTeacher] = useState(null);
@@ -112,21 +114,15 @@ export default function ScheduleEditor() {
 
   const stationNames = [...new Set(assignments.map(a => a.station_name))];
   const dates = [...new Set(filtered.map(a => a.date))].sort();
+  const validation = validateAssignments(assignments);
 
   return (
     <div className="space-y-4 pb-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold">עורך שיבוצים</h1>
-        <div className="flex gap-2">
-          <Button onClick={handleGenerate} disabled={generating} variant="outline" size="sm">
-            {generating ? <><Loader2 className="w-4 h-4 ml-1 animate-spin" /> יוצר...</> : <><Plus className="w-4 h-4 ml-1" /> יצירת טיוטה</>}
-          </Button>
-          {selectedPlan?.status === "draft" && (
-            <Button onClick={handlePublish} disabled={publishing} size="sm">
-              {publishing ? <><Loader2 className="w-4 h-4 ml-1 animate-spin" /> מפרסם...</> : <><Send className="w-4 h-4 ml-1" /> פרסום</>}
-            </Button>
-          )}
-        </div>
+        <Button onClick={handleGenerate} disabled={generating} variant="outline" size="sm">
+          {generating ? <><Loader2 className="w-4 h-4 ml-1 animate-spin" /> יוצר...</> : <><Plus className="w-4 h-4 ml-1" /> יצירת טיוטה</>}
+        </Button>
       </div>
 
       {genResult?.conflicts?.length > 0 && (
@@ -157,6 +153,21 @@ export default function ScheduleEditor() {
 
       {selectedPlan && (
         <>
+          <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-stretch">
+            <ScheduleValidationSummary validation={validation} />
+            {selectedPlan.status === "draft" && (
+              <Button
+                onClick={handlePublish}
+                disabled={!validation.isValid || publishing}
+                aria-describedby="publish-validation-note"
+                className="h-auto min-h-12 sm:min-w-36"
+              >
+                {publishing ? <><Loader2 className="w-4 h-4 ml-1 animate-spin" /> מפרסם...</> : <><Send className="w-4 h-4 ml-1" /> פרסום הלוח</>}
+              </Button>
+            )}
+          </div>
+          {selectedPlan.status === "draft" && !validation.isValid && <p id="publish-validation-note" className="text-xs text-muted-foreground">הפרסום יתאפשר לאחר כיסוי מלא ופתרון כל ההתנגשויות.</p>}
+
           {/* Filters */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <select value={filters.date} onChange={e => setFilters(f => ({ ...f, date: e.target.value }))} className="h-10 rounded-lg border border-input bg-background px-2 text-sm">
@@ -189,31 +200,12 @@ export default function ScheduleEditor() {
                 return (
                   <div key={date}>
                     <h3 className="font-semibold text-sm text-muted-foreground mb-2">{formatDateWithDay(date)}</h3>
-                    <div className="space-y-1.5">
-                      {dayAssignments.map(a => {
-                        const bt = BREAK_TYPES[a.break_type];
-                        const st = STATUS_LABELS[a.status] || STATUS_LABELS.scheduled;
-                        return (
-                          <div key={a.id} className="flex items-center gap-2 rounded-lg border border-border p-2.5 bg-card">
-                            <span className={`text-xs px-2 py-0.5 rounded-full border shrink-0 ${bt.color}`}>{bt.label}</span>
-                            <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                            <span className="text-xs shrink-0">{formatTimeRange(a.start_time, a.end_time)}</span>
-                            <MapPin className="w-3.5 h-3.5 text-muted-foreground shrink-0 mr-auto" />
-                            <span className="text-xs truncate">{a.station_name}</span>
-                            {selectedPlan.status === "draft" ? (
-                              <select value={a.teacher_id} onChange={e => { setEditingAsgn(a); updateAssignment(a.id, e.target.value); }}
-                                className="h-7 rounded border border-input bg-background px-1 text-xs mr-auto min-w-0">
-                                <option value="">—</option>
-                                {allTeachers.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
-                              </select>
-                            ) : (
-                              <span className="text-xs font-medium mr-auto truncate">{a.teacher_name || "—"}</span>
-                            )}
-                            <span className={`text-xs px-1.5 py-0.5 rounded ${st.class}`}>{st.label}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    <AssignmentGroups
+                      assignments={dayAssignments}
+                      isDraft={selectedPlan.status === "draft"}
+                      teachers={allTeachers}
+                      onTeacherChange={(assignment, teacherId) => { setEditingAsgn(assignment); updateAssignment(assignment.id, teacherId); }}
+                    />
                   </div>
                 );
               })}
