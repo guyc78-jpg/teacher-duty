@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
-import { getCurrentTeacher, formatDateWithDay, formatTimeRange, todayISO, BREAK_TYPES, STATUS_LABELS, HEBREW_DAYS, schoolDaysInRange, toISODate } from "@/lib/dutyUtils";
+import { getCurrentTeacher, formatDateWithDay, formatTimeRange, todayISO, isSchoolDay, BREAK_TYPES, STATUS_LABELS, HEBREW_DAYS, schoolDaysInRange, toISODate } from "@/lib/dutyUtils";
 import { Clock, MapPin, Calendar, CheckCircle, Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -17,7 +17,7 @@ export default function MyDuties() {
     setTeacher(t);
     if (t) {
       const all = await base44.entities.Assignment.filter({ teacher_id: t.id, plan_status: "published" }, "date", 200);
-      setAssignments(all.sort((a, b) => a.date.localeCompare(b.date)));
+      setAssignments(all.filter(a => isSchoolDay(a.date)).sort((a, b) => a.date.localeCompare(b.date)));
     }
     setLoading(false);
   }, []);

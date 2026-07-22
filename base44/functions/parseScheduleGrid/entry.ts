@@ -56,6 +56,7 @@ Deno.serve(async (req) => {
           const times = LESSON_TIMES[lessonNumber];
           if (!times) continue;
           for (const [index, day] of Object.entries(dayColumns)) {
+            if (![0, 1, 2, 3, 4].includes(day)) continue;
             const content = String(row[index] ?? '').trim();
             if (!content) continue;
             lessons.push({

@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { isSchoolDate } from '../../shared/schoolDays.js';
 
 // פרסום תוכנית שיבוץ — הופך טיוטה לפעילה, שולח התראות למורים שהשתבצו
 
@@ -21,6 +22,11 @@ Deno.serve(async (req) => {
     // בדיקות תקינות לפני פרסום
     const assignments = await base44.asServiceRole.entities.Assignment.filter({ plan_id });
     const conflicts = [];
+
+    // חסימה קשיחה בצד השרת: אין לפרסם שיבוץ בשישי או בשבת
+    assignments.filter(a => !isSchoolDate(a.date)).forEach(a => {
+      conflicts.push({ type: "weekend_assignment", date: a.date, teacher: a.teacher_name });
+    });
 
     // בדיקת עמדות ללא כיסוי
     const stations = await base44.asServiceRole.entities.Station.filter({ is_active: true });

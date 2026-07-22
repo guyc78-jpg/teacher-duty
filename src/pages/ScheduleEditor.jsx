@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
-import { getCurrentTeacher, formatDateWithDay, formatTimeRange, BREAK_TYPES, STATUS_LABELS, isManagement, schoolDaysInRange, HEBREW_DAYS } from "@/lib/dutyUtils";
+import { getCurrentTeacher, formatDateWithDay, formatTimeRange, BREAK_TYPES, STATUS_LABELS, isManagement, isSchoolDay, schoolDaysInRange, HEBREW_DAYS } from "@/lib/dutyUtils";
 import { generateDutyDraft } from "@/functions/generateDutyDraft";
 import { publishDutyPlan } from "@/functions/publishDutyPlan";
 import { Plus, Calendar, Send, AlertTriangle, Loader2, Filter, Clock, MapPin, X } from "lucide-react";
@@ -39,7 +39,7 @@ export default function ScheduleEditor() {
 
   const loadPlan = async (planId) => {
     const asgn = await base44.entities.Assignment.filter({ plan_id: planId }, "date", 500);
-    setAssignments(asgn);
+    setAssignments(asgn.filter(a => isSchoolDay(a.date)));
     setSelectedPlan(plans.find(p => p.id === planId));
   };
 
@@ -159,7 +159,10 @@ export default function ScheduleEditor() {
         <>
           {/* Filters */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <Input type="date" value={filters.date} onChange={e => setFilters(f => ({ ...f, date: e.target.value }))} className="text-sm" />
+            <select value={filters.date} onChange={e => setFilters(f => ({ ...f, date: e.target.value }))} className="h-10 rounded-lg border border-input bg-background px-2 text-sm">
+              <option value="">כל ימי העבודה</option>
+              {[...new Set(assignments.map(a => a.date))].sort().map(date => <option key={date} value={date}>{formatDateWithDay(date)}</option>)}
+            </select>
             <select value={filters.break_type} onChange={e => setFilters(f => ({ ...f, break_type: e.target.value }))} className="h-10 rounded-lg border border-input bg-background px-2 text-sm">
               <option value="">כל ההפסקות</option>
               <option value="big">גדולה</option>

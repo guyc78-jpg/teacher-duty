@@ -1,9 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { SCHOOL_DAYS, isSchoolDate } from '../../shared/schoolDays.js';
 
 // מנוע שיבוץ אוטומטי — יוצר טיוטת שיבוץ בלבד, ללא פרסום
-// כללים: ימים א׳–ה׳ בלבד, ללא שישי, בדיקת התנגשויות, עומס יומי, רוטציה, הוגנות
-
-const SCHOOL_DAYS = [0, 1, 2, 3, 4]; // ראשון–חמישי
+// כללים: ימים א׳–ה׳ בלבד, בדיקת התנגשויות, עומס יומי, רוטציה, הוגנות
 const BREAK_ORDER = { big: 1, medium: 2, small: 3 };
 
 function toISODate(d) {
@@ -80,8 +79,9 @@ Deno.serve(async (req) => {
     const schoolDates = [];
     const exceptionDates = new Set(calendarExceptions.map(e => e.date));
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      if (SCHOOL_DAYS.includes(d.getDay()) && !exceptionDates.has(toISODate(d))) {
-        schoolDates.push(toISODate(d));
+      const dateStr = toISODate(d);
+      if (isSchoolDate(dateStr) && !exceptionDates.has(dateStr)) {
+        schoolDates.push(dateStr);
       }
     }
 

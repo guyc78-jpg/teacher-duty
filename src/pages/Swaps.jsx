@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
-import { getCurrentTeacher, formatDateWithDay, formatTimeRange, BREAK_TYPES } from "@/lib/dutyUtils";
+import { getCurrentTeacher, formatDateWithDay, formatTimeRange, isSchoolDay, BREAK_TYPES } from "@/lib/dutyUtils";
 import { Clock, MapPin, Repeat, ArrowRightLeft, UserPlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,9 +25,9 @@ export default function Swaps() {
         base44.entities.Assignment.filter({ teacher_id: t.id, plan_status: "published" }, "date", 100),
         base44.entities.TeacherProfile.filter({ is_active: true })
       ]);
-      setMyRequests(mine);
-      setOpenRequests(open);
-      setAssignments(asgn.sort((a, b) => a.date.localeCompare(b.date)));
+      setMyRequests(mine.filter(r => isSchoolDay(r.date)));
+      setOpenRequests(open.filter(r => isSchoolDay(r.date)));
+      setAssignments(asgn.filter(a => isSchoolDay(a.date)).sort((a, b) => a.date.localeCompare(b.date)));
       setAllTeachers(teachers.filter(tt => tt.id !== t.id));
     }
     setLoading(false);

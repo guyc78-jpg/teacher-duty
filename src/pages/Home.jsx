@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { getCurrentTeacher, formatDateWithDay, formatTimeRange, todayISO, BREAK_TYPES, STATUS_LABELS, HEBREW_DAYS, HEBREW_MONTHS } from "@/lib/dutyUtils";
+import { getCurrentTeacher, formatDateWithDay, formatTimeRange, todayISO, isSchoolDay, BREAK_TYPES, STATUS_LABELS, HEBREW_DAYS, HEBREW_MONTHS } from "@/lib/dutyUtils";
 import { CheckCircle, Clock, MapPin, Calendar, AlertTriangle, Repeat, Bell } from "lucide-react";
 
 export default function Home() {
@@ -15,7 +15,7 @@ export default function Home() {
     setTeacher(t);
     if (t) {
       const all = await base44.entities.Assignment.filter({ teacher_id: t.id, plan_status: "published" }, "date", 100);
-      const sorted = all.sort((a, b) => a.date.localeCompare(b.date));
+      const sorted = all.filter(a => isSchoolDay(a.date)).sort((a, b) => a.date.localeCompare(b.date));
       setAssignments(sorted);
     }
     setLoading(false);
@@ -187,17 +187,20 @@ function CompactCalendar({ assignments, today }) {
   const [viewDate, setViewDate] = useState(new Date());
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
-  const firstDay = new Date(year, month, 1);
-  // Calendar starts Sunday (day 0)
-  const startOffset = firstDay.getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const dutyDates = new Set(assignments.map(a => a.date));
 
   const cells = [];
-  // Header row - Sunday first
-  const weekDays = ["א", "ב", "ג", "ד", "ה", "ו", "ש"];
-  for (let i = 0; i < startOffset; i++) cells.push(null);
+  const weekDays = ["א", "ב", "ג", "ד", "ה"];
+  let firstVisibleDay = true;
   for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(year, month, d);
+    const dayOfWeek = date.getDay();
+    if (dayOfWeek > 4) continue;
+    if (firstVisibleDay) {
+      for (let i = 0; i < dayOfWeek; i++) cells.push(null);
+      firstVisibleDay = false;
+    }
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
     cells.push({ day: d, dateStr });
   }
@@ -211,7 +214,7 @@ function CompactCalendar({ assignments, today }) {
         <h3 className="font-bold text-sm">{HEBREW_MONTHS[month]} {year}</h3>
         <button onClick={() => setViewDate(new Date(year, month + 1, 1))} className="p-1 rounded hover:bg-muted">←</button>
       </div>
-      <div className="grid grid-cols-7 gap-1 text-center">
+      <div className="grid grid-cols-5 gap-1 text-center">
         {weekDays.map(d => <div key={d} className="text-xs text-muted-foreground py-1">{d}</div>)}
         {cells.map((cell, i) => (
           <div key={i} className="aspect-square flex items-center justify-center">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
-import { getCurrentTeacher, formatDateWithDay, formatTimeRange, todayISO, BREAK_TYPES, STATUS_LABELS, isManagement } from "@/lib/dutyUtils";
+import { getCurrentTeacher, formatDateWithDay, formatTimeRange, todayISO, isSchoolDay, BREAK_TYPES, STATUS_LABELS, isManagement } from "@/lib/dutyUtils";
 import { Users, AlertTriangle, Repeat, Clock, MapPin, CheckCircle, XCircle, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -23,10 +23,11 @@ export default function AdminDashboard() {
         base44.entities.IncidentReport.filter({ status: "open" }, "-event_time", 20),
         base44.entities.SwapRequest.filter({ status: "pending" }, "-created_at", 20)
       ]);
-      setTodayAssignments(asgn);
+      const workday = isSchoolDay(today);
+      setTodayAssignments(workday ? asgn : []);
       setIncidents(inc);
-      setSwaps(swp);
-      const arr = await base44.entities.ArrivalConfirmation.filter({ date: today }, "-timestamp", 200);
+      setSwaps(swp.filter(s => isSchoolDay(s.date)));
+      const arr = workday ? await base44.entities.ArrivalConfirmation.filter({ date: today }, "-timestamp", 200) : [];
       setArrivals(arr);
     }
     setLoading(false);
