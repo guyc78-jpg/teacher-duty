@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
-import { getCurrentTeacher, isManagement, DIVISION_LABELS } from "@/lib/dutyUtils";
+import { getCurrentTeacher, isManagement } from "@/lib/dutyUtils";
 import { Plus, X, Edit, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import BreaksSettings from "@/components/settings/BreaksSettings";
+import StationsSettings from "@/components/settings/StationsSettings";
 
 export default function SettingsPage() {
   const [teacher, setTeacher] = useState(null);
@@ -39,49 +40,9 @@ export default function SettingsPage() {
         ))}
       </div>
       {tab === "breaks" && <BreaksSettings Modal={Modal} />}
-      {tab === "stations" && <StationsSettings />}
+      {tab === "stations" && <StationsSettings StationModal={StationModal} />}
       {tab === "rules" && <RulesSettings />}
       {tab === "general" && <GeneralSettings />}
-    </div>
-  );
-}
-
-function StationsSettings() {
-  const [stations, setStations] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(null);
-
-  const load = useCallback(async () => {
-    const all = await base44.entities.Station.list("sort_order", 50);
-    setStations(all);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  if (loading) return <div className="flex justify-center py-8"><div className="w-6 h-6 border-4 border-muted border-t-primary rounded-full animate-spin" /></div>;
-
-  return (
-    <div className="space-y-2">
-      {stations.map(s => (
-        <div key={s.id} className="rounded-xl border border-border p-3 bg-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="font-medium">{s.name}</span>
-              {s.is_sport_station && <span className="text-xs mr-2 px-1.5 py-0.5 rounded bg-primary/10 text-primary">ספורט</span>}
-            </div>
-            <Button variant="outline" size="sm" onClick={() => setEditing(s)}><Edit className="w-3.5 h-3.5" /></Button>
-          </div>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-            <span>{DIVISION_LABELS[s.division]}</span>
-            <span>· גדולה: {s.staffing_requirements?.big || 1}</span>
-            <span>· בינונית: {s.staffing_requirements?.medium || 1}</span>
-            <span>· קטנה: {s.staffing_requirements?.small || 1}</span>
-          </div>
-        </div>
-      ))}
-      <Button variant="outline" className="w-full" onClick={() => setEditing({})}><Plus className="w-4 h-4 ml-1" /> הוסף עמדה</Button>
-      {editing && <StationModal station={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }} />}
     </div>
   );
 }
