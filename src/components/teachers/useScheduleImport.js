@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { parseScheduleGrid } from "@/functions/parseScheduleGrid";
 
 const DAY_MAP = { "א": 0, "א׳": 0, "ראשון": 0, "ב": 1, "ב׳": 1, "שני": 1, "ג": 2, "ג׳": 2, "שלישי": 2, "ד": 3, "ד׳": 3, "רביעי": 3, "ה": 4, "ה׳": 4, "חמישי": 4, sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4 };
 const clean = value => String(value ?? "").trim().replace(/\s+/g, " ");
@@ -32,9 +33,15 @@ export default function useScheduleImport(teachers) {
     setState({ status: "analyzing", rows: [], unmatched: [], error: "", imported: 0 });
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      const result = await base44.integrations.Core.ExtractDataFromUploadedFile({ file_url, json_schema: extractionSchema });
-      if (result.status !== "success") throw new Error(result.details || "לא ניתן לקרוא את הקובץ");
-      const source = Array.isArray(result.output) ? result.output : [];
+      let source;
+      if (/\.xlsx?$/i.test(file.name)) {
+        const response = await parseScheduleGrid({ file_url });
+        source = response.data?.lessons || [];
+      } else {
+        const result = await base44.integrations.Core.ExtractDataFromUploadedFile({ file_url, json_schema: extractionSchema });
+        if (result.status !== "success") throw new Error(result.details || "לא ניתן לקרוא את הקובץ");
+        source = Array.isArray(result.output) ? result.output : [];
+      }
       const byName = new Map(teachers.map(teacher => [clean(teacher.full_name).toLowerCase(), teacher]));
       const unmatched = new Set();
       const rows = source.flatMap(item => {
