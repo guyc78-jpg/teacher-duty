@@ -18,7 +18,7 @@ export default function usePush() {
   useEffect(() => {
     if (!supported) return;
     (async () => {
-      const reg = await navigator.serviceWorker.register("/public/sw.js");
+      const reg = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
       const sub = await reg.pushManager.getSubscription();
       setEnabled(!!sub && Notification.permission === "granted");
     })();
@@ -28,7 +28,7 @@ export default function usePush() {
     if (!supported || busy) return;
     setBusy(true);
     try {
-      const reg = (await navigator.serviceWorker.getRegistration("/public/")) || (await navigator.serviceWorker.register("/public/sw.js"));
+      const reg = (await navigator.serviceWorker.getRegistration("/")) || (await navigator.serviceWorker.register("/sw.js", { scope: "/" }));
       const existing = await reg.pushManager.getSubscription();
       if (enabled && existing) {
         await existing.unsubscribe();
