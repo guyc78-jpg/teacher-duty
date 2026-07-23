@@ -23,6 +23,17 @@ export async function loadFixedDuties(teacherId) {
     .sort((a, b) => a.day - b.day || (a.start_time || "").localeCompare(b.start_time || ""));
 }
 
+export async function loadRecurringDuties(teacherId) {
+  const [template, breaks, stations] = await Promise.all([loadTemplate(), loadBreaks(), loadStations()]);
+  const list = template.published_assignments && template.published_assignments.length ? template.published_assignments : (template.assignments || []);
+  return list.filter(a => (a.teacher_ids || []).includes(teacherId)).map(a => {
+    const day = Number(a.day_of_week);
+    const brk = breaks.find(b => b.break_type === a.break_type && (b.active_days || []).map(Number).includes(day));
+    const station = stations.find(s => s.id === a.station_id);
+    return { key: `${day}|${a.break_type}|${a.station_id}`, day, day_name: HEBREW_DAYS[day], break_type: a.break_type, break_label: BREAK_TYPES[a.break_type]?.label || a.break_type, station_id: a.station_id, start_time: brk?.start_time, end_time: brk?.end_time, station_name: station?.name || a.station_name || "עמדה", area: station?.area || "" };
+  }).sort((a, b) => a.day - b.day || (a.start_time || "").localeCompare(b.start_time || ""));
+}
+
 export async function loadUpcomingChanges(teacher) {
   const today = todayISO();
   const [exceptions, absences] = await Promise.all([

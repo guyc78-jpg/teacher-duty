@@ -5,6 +5,7 @@ import { Clock, MapPin, Calendar, CheckCircle, Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { manageSpecialDay } from "@/functions/manageSpecialDay";
+import { loadRecurringDuties } from "@/components/teachers/details/detailsData";
 import SpecialDutyCards from "@/components/special-days/SpecialDutyCards";
 
 export default function MyDuties() {
@@ -12,6 +13,7 @@ export default function MyDuties() {
   const [assignments, setAssignments] = useState([]);
   const [specialAssignments, setSpecialAssignments] = useState([]);
   const [replacementDates, setReplacementDates] = useState(() => new Set());
+  const [recurring, setRecurring] = useState([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState("week"); // day | week | month
   const [confirming, setConfirming] = useState(null);
@@ -20,11 +22,12 @@ export default function MyDuties() {
     const t = await getCurrentTeacher();
     setTeacher(t);
     if (t) {
-      const [all, specialResult] = await Promise.all([base44.entities.Assignment.filter({ teacher_id: t.id, plan_status: "published" }, "date", 200), manageSpecialDay({ action: "my_assignments" })]);
+      const [all, specialResult, recurringDuties] = await Promise.all([base44.entities.Assignment.filter({ teacher_id: t.id, plan_status: "published" }, "date", 200), manageSpecialDay({ action: "my_assignments" }), loadRecurringDuties(t.id)]);
       const special = specialResult.data.assignments || [], hiddenDates = new Set((specialResult.data.days || []).filter(d => d.replace_regular_schedule).map(d => d.date));
       setReplacementDates(hiddenDates);
       setAssignments(all.filter(a => isSchoolDay(a.date) && !hiddenDates.has(a.date)).sort((a, b) => a.date.localeCompare(b.date)));
       setSpecialAssignments(special);
+      setRecurring(recurringDuties);
     }
     setLoading(false);
   }, []);
@@ -66,28 +69,30 @@ export default function MyDuties() {
 
   const today = new Date();
   const todayStr = todayISO();
-  let filtered = assignments;
+  let periodStart, periodEnd;
+  if (view === "day") { periodStart = periodEnd = new Date(today); }
+  else if (view === "week") { const day = today.getDay(); periodStart = new Date(today); periodStart.setDate(today.getDate() - day); periodEnd = new Date(periodStart); periodEnd.setDate(periodStart.getDate() + 4); }
+  else { periodStart = new Date(today.getFullYear(), today.getMonth(), 1); periodEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0); }
+  let filtered = assignments.filter(a => a.date >= toISODate(periodStart) && a.date <= toISODate(periodEnd));
 
-  if (view === "day") {
-    filtered = assignments.filter(a => a.date === todayStr);
-  } else if (view === "week") {
-    // This week Sunday-Thursday
-    const day = today.getDay();
-    const sunday = new Date(today);
-    sunday.setDate(today.getDate() - day);
-    const thursday = new Date(sunday);
-    thursday.setDate(sunday.getDate() + 4);
-    filtered = assignments.filter(a => a.date >= toISODate(sunday) && a.date <= toISODate(thursday));
-  } else if (view === "month") {
-    filtered = assignments.filter(a => a.date.startsWith(`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`));
+  // תורניות קבועות חוזרות לכל יום לימודים בתקופה (אלא אם קיים שיבוץ קונקרטי לאותו תאריך/עמדה)
+  const concreteKeysByDate = {};
+  filtered.forEach(a => { (concreteKeysByDate[a.date] ||= new Set()).add(`${a.break_type}|${a.station_id}`); });
+  const recurringItems = [];
+  for (let dt = new Date(periodStart); dt <= periodEnd; dt.setDate(dt.getDate() + 1)) {
+    const iso = toISODate(dt);
+    const dow = new Date(iso + "T00:00:00").getDay();
+    if (!isSchoolDay(iso) || replacementDates.has(iso)) continue;
+    const keys = concreteKeysByDate[iso] || new Set();
+    recurring.filter(r => r.day === dow && !keys.has(`${r.break_type}|${r.station_id}`)).forEach(r => {
+      recurringItems.push({ id: `rec-${iso}-${r.key}`, date: iso, day_of_week: dow, break_type: r.break_type, break_name: r.break_label, start_time: r.start_time, end_time: r.end_time, station_id: r.station_id, station_name: r.station_name, status: "scheduled", plan_status: "recurring", recurring: true, area: r.area });
+    });
   }
+  filtered = [...filtered, ...recurringItems];
 
-  // Group by date
+  // קיבוץ לפי תאריך
   const grouped = {};
-  filtered.forEach(a => {
-    if (!grouped[a.date]) grouped[a.date] = [];
-    grouped[a.date].push(a);
-  });
+  filtered.forEach(a => { (grouped[a.date] ||= []).push(a); });
   const dates = Object.keys(grouped).sort();
 
   return (
@@ -138,9 +143,9 @@ export default function MyDuties() {
                         <MapPin className="w-4 h-4" /> {a.station_name}
                       </div>
                       <div className="flex items-center justify-between gap-2">
-                        <span className={`text-xs px-2 py-0.5 rounded-full border ${st.class}`}>{st.label}</span>
+                        {a.recurring ? (<span className="rounded-full border bg-primary/10 px-2 py-0.5 text-xs text-primary"><Repeat className="ml-0.5 inline h-3 w-3" />חוזרת</span>) : (<span className={`text-xs px-2 py-0.5 rounded-full border ${st.class}`}>{st.label}</span>)}
                         <div className="flex gap-2">
-                          {a.status === "scheduled" && a.date === todayStr && (
+                          {a.status === "scheduled" && a.date === todayStr && !a.recurring && (
                             <Button size="sm" onClick={() => confirmArrival(a)} disabled={confirming === a.id} className="h-8">
                               {confirming === a.id ? "..." : <><CheckCircle className="w-3.5 h-3.5 ml-1" /> אישור הגעה</>}
                             </Button>
