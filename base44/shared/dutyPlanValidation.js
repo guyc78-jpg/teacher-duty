@@ -1,4 +1,5 @@
 import { isSchoolDate } from "./schoolDays.js";
+import { dutyEligibility } from "./dutyEligibility.js";
 
 const mins = value => { const [h, m] = (value || "00:00").split(":").map(Number); return h * 60 + m; };
 const overlaps = (a, b) => mins(a.start_time) < mins(b.end_time) && mins(b.start_time) < mins(a.end_time);
@@ -7,7 +8,8 @@ const push = (list, type, assignment, message) => list.push({ type, assignment_i
 export function teacherAvailability(teacher, assignment, data) {
   const reasons = [];
   if (!teacher) return { available: false, reasons: ["נתוני המורה חסרים"], warnings: [], score: -999 };
-  if (teacher.is_exempt) reasons.push("פטור מתורנות");
+  const eligibility = dutyEligibility(teacher);
+  if (!eligibility.eligible) reasons.push(eligibility.reason);
   if (teacher.days_off?.includes(assignment.day_of_week)) reasons.push("יום חופשי");
   if (data.absences.some(item => item.teacher_id === teacher.id && assignment.date >= item.start_date && assignment.date <= item.end_date)) reasons.push("בהיעדרות");
   const schedule = data.schedules.filter(item => item.teacher_id === teacher.id && item.day_of_week === assignment.day_of_week);
@@ -41,8 +43,10 @@ export function validateDutyPlan(assignments, data, options = {}) {
     if (!isSchoolDate(item.date)) push(errors, "weekend_assignment", item, "שיבוץ ביום שישי או שבת");
     if (!item.teacher_id) push(errors, "uncovered", item, "עמדה אינה מאוישת");
     if (item.teacher_id) {
-      const result = teacherAvailability(data.teachers.find(t => t.id === item.teacher_id), item, { ...data, assignments });
-      result.reasons.forEach(message => push(errors, "teacher_unavailable", item, message));
+      const teacher = data.teachers.find(t => t.id === item.teacher_id);
+      const result = teacherAvailability(teacher, item, { ...data, assignments });
+      const eligibility = dutyEligibility(teacher);
+      result.reasons.forEach(message => push(errors, !eligibility.eligible && message === eligibility.reason ? "critical_ineligible_teacher" : "teacher_unavailable", item, `${teacher?.full_name || "מורה"}: ${message}`));
       result.warnings.forEach(message => push(warnings, "teacher_warning", item, message));
     }
   }

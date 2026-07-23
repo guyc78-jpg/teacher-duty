@@ -1,6 +1,7 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
 import { isSchoolDate } from "../../shared/schoolDays.js";
 import { teacherAvailability, validateDutyPlan } from "../../shared/dutyPlanValidation.js";
+import { dutyEligibility } from "../../shared/dutyEligibility.js";
 
 Deno.serve(async (req) => {
   try {
@@ -53,6 +54,9 @@ Deno.serve(async (req) => {
       if (!Number.isInteger(target) || target < 1 || target >= (plan.version || 1)) return Response.json({ error: "גרסה לא תקינה" }, { status: 400 });
       const revisions = await base44.asServiceRole.entities.AssignmentRevision.filter({ plan_id });
       const toUndo = revisions.filter(item => item.version > target).sort((a, b) => b.version - a.version);
+      const restoredTeacherIds = [...new Set(toUndo.map(item => item.previous_teacher_id).filter(Boolean))];
+      const blockedRestore = restoredTeacherIds.map(id => teachers.find(item => item.id === id)).find(item => !dutyEligibility(item).eligible);
+      if (blockedRestore) return Response.json({ error: dutyEligibility(blockedRestore).reason, critical: true }, { status: 422 });
       for (const revision of toUndo) {
         if (revision.action === "add") await base44.asServiceRole.entities.Assignment.delete(revision.assignment_id);
         else await base44.asServiceRole.entities.Assignment.update(revision.assignment_id, { teacher_id: revision.previous_teacher_id || null, teacher_name: revision.previous_teacher_name || "", source: "manual" });
@@ -77,6 +81,8 @@ Deno.serve(async (req) => {
     let teacher = null;
     if (body.teacher_id) {
       teacher = teachers.find(item => item.id === body.teacher_id);
+      const eligibility = dutyEligibility(teacher);
+      if (!eligibility.eligible) return Response.json({ error: eligibility.reason, unavailable: true, critical: true }, { status: 422 });
       const availability = teacherAvailability(teacher, assignment, data);
       if (!availability.available) return Response.json({ error: availability.reasons.join(", "), unavailable: true }, { status: 422 });
       if (availability.warnings.length && !body.override_reason?.trim()) return Response.json({ error: "נדרשת סיבת חריגה", warnings: availability.warnings, requires_reason: true }, { status: 422 });

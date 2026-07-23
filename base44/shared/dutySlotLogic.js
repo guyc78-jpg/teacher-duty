@@ -1,3 +1,5 @@
+import { dutyEligibility } from "./dutyEligibility.js";
+
 export const mins = value => { const [h, m] = (value || "00:00").split(":").map(Number); return h * 60 + m; };
 export const overlaps = (a, b) => mins(a.start_time) < mins(b.end_time) && mins(b.start_time) < mins(a.end_time);
 export const keyOf = item => `${Number(item.day_of_week)}|${item.break_type}|${item.station_id}`;
@@ -14,7 +16,7 @@ export function makeSlot(body, stations, breaks) {
 export function candidate(teacher, slot, data, ignoreKey) {
   if (!teacher) return { available: false, reasons: ["המורה לא נמצא"], warnings: [], score: -999 };
   const reasons = [], warnings = [], date = slot.date || nextDate(slot.day_of_week), schedule = data.schedules.filter(s => s.teacher_id === teacher.id && s.day_of_week === slot.day_of_week), assigned = data.assignments.filter(a => keyOf(a) !== ignoreKey && a.teacher_ids?.includes(teacher.id));
-  if (teacher.is_exempt) reasons.push("פטור מתורנות"); if (teacher.days_off?.includes(slot.day_of_week)) reasons.push("יום חופשי");
+  const eligibility = dutyEligibility(teacher); if (!eligibility.eligible) reasons.push(eligibility.reason); if (teacher.days_off?.includes(slot.day_of_week)) reasons.push("יום חופשי");
   if (data.absences.some(a => a.teacher_id === teacher.id && date >= a.start_date && date <= a.end_date)) reasons.push("נעדר");
   if (schedule.some(item => overlaps(item, slot))) reasons.push("מלמד בזמן זה");
   if (assigned.some(item => item.day_of_week === slot.day_of_week && item.break_type === slot.break_type)) reasons.push("כבר משובץ באותה הפסקה");

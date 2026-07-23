@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { SCHOOL_DAYS, isSchoolDate } from '../../shared/schoolDays.js';
+import { isDutyEligible } from '../../shared/dutyEligibility.js';
 
 // מנוע שיבוץ אוטומטי — יוצר ושומר לוח שיבוצים ללא פרסום
 // כללים: ימים א׳–ה׳ בלבד, בדיקת התנגשויות, עומס יומי, רוטציה, הוגנות
@@ -54,15 +55,11 @@ Deno.serve(async (req) => {
     // סינון מורים לפי מצב הרצה
     const settings = await base44.asServiceRole.entities.SystemSettings.list();
     const s = settings[0] || {};
-    let eligibleTeachers = teachers;
+    let eligibleTeachers = teachers.filter(isDutyEligible);
     if (s.pilot_mode_enabled && s.pilot_teacher_ids?.length > 0) {
       eligibleTeachers = teachers.filter(t => s.pilot_teacher_ids.includes(t.id));
     }
-    if (is_management) {
-      eligibleTeachers = eligibleTeachers.filter(t => ["admin", "coordinator"].includes(t.role));
-    } else {
-      eligibleTeachers = eligibleTeachers.filter(t => !t.is_exempt && t.role !== "admin");
-    }
+    if (is_management) eligibleTeachers = [];
 
     // חסימה: מורים ללא מערכת שעות או עם 0 שעות — נדרש אישור מנהל מפורש
     const teacherIdsWithSchedule = new Set(allSchedules.map(s => s.teacher_id));

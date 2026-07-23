@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
+import { manageTeacherProfile } from "@/functions/manageTeacherProfile";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, ClipboardCheck } from "lucide-react";
 import { CHANGE_LABELS, formatChangeValue } from "@/components/onboarding/onboardingConstants";
@@ -33,9 +34,9 @@ export default function PendingApprovals({ onChanged }) {
           updates.exemption_status = updates.request_exemption ? "approved" : "none";
           delete updates.request_exemption;
         }
-        await base44.entities.TeacherProfile.update(r.teacher_id, updates);
+        await manageTeacherProfile({ action: "update", teacher_id: r.teacher_id, data: updates });
       } else if (changes.request_exemption) {
-        await base44.entities.TeacherProfile.update(r.teacher_id, { exemption_status: "rejected" });
+        await manageTeacherProfile({ action: "update", teacher_id: r.teacher_id, data: { exemption_status: "rejected" } });
       }
       await base44.entities.ProfileChangeRequest.update(r.id, { status: approve ? "approved" : "rejected", reviewed_at: new Date().toISOString() });
       await load();
@@ -47,10 +48,10 @@ export default function PendingApprovals({ onChanged }) {
   const decideExemption = async (t, approve) => {
     setBusy(t.id);
     try {
-      await base44.entities.TeacherProfile.update(t.id, {
+      await manageTeacherProfile({ action: "update", teacher_id: t.id, data: {
         is_exempt: approve,
         exemption_status: approve ? "approved" : "rejected"
-      });
+      } });
       await load();
       onChanged?.();
     } catch (err) { alert("שגיאה: " + (err.message || "")); }

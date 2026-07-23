@@ -37,12 +37,12 @@ export default function TeacherSearchList({ duty, onSelect }) {
       ) : (
         <div className="max-h-56 space-y-1.5 overflow-y-auto">
           {results.map(candidate => (
-            <button key={candidate.id} onClick={() => onSelect(candidate)} className="flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-card p-2.5 text-right hover:border-primary">
+            <button key={candidate.id} disabled={!candidate.available} onClick={() => onSelect(candidate)} className="flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-card p-2.5 text-right hover:border-primary disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-60">
               <span className="min-w-0">
                 <span className="block text-sm font-semibold">{candidate.full_name}</span>
-                <span className="block text-xs text-muted-foreground">{candidate.subject}</span>
+                <span className="block text-xs text-muted-foreground">{candidate.available ? candidate.subject : candidate.reasons.join(" · ")}</span>
               </span>
-              <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{candidate.duty_count}{candidate.quota ? `/${candidate.quota}` : ""} תורנויות</span>
+              <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{candidate.available ? `${candidate.duty_count}${candidate.quota ? `/${candidate.quota}` : ""} תורנויות` : "חסום"}</span>
             </button>
           ))}
         </div>

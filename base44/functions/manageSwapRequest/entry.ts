@@ -137,10 +137,9 @@ Deno.serve(async req => {
         (!query || [person.full_name, person.subject, ...(person.additional_subjects || [])].some(value => (value || '').toLocaleLowerCase('he').includes(query)))
       );
       const results = pool.map(person => assess(ctx, person, body))
-        .filter(item => item.available)
-        .sort((a, b) => b.score - a.score || a.full_name.localeCompare(b.full_name, 'he'))
+        .sort((a, b) => Number(b.available) - Number(a.available) || b.score - a.score || a.full_name.localeCompare(b.full_name, 'he'))
         .slice(0, 15)
-        .map(item => ({ id: item.id, full_name: item.full_name, subject: item.subject, duty_count: item.duty_count, quota: item.quota, warnings: item.warnings }));
+        .map(item => ({ id: item.id, full_name: item.full_name, subject: item.subject, duty_count: item.duty_count, quota: item.quota, available: item.available, reasons: item.reasons, warnings: item.warnings }));
       return Response.json({ candidates: results });
     }
 

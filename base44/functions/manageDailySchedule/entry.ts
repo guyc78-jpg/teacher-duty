@@ -1,5 +1,6 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
 import { keyOf, mins, unique, makeSlot, candidate } from "../../shared/dutySlotLogic.js";
+import { dutyEligibility } from "../../shared/dutyEligibility.js";
 
 const dayOf = value => new Date(`${value}T12:00:00`).getDay();
 const isoDate = value => typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
@@ -62,6 +63,8 @@ Deno.serve(async req => {
       const teacherIds = unique(body.teacher_ids);
       if (teacherIds.length > slot.required) return Response.json({ error: `ניתן לשבץ עד ${slot.required} מורים לעמדה זו` }, { status: 422 });
       const reason = (body.override_reason || "").trim();
+      const blocked = teacherIds.map(id => teachers.find(t => t.id === id)).find(item => !dutyEligibility(item).eligible);
+      if (blocked) return Response.json({ error: dutyEligibility(blocked).reason, hard_conflict: true, critical: true }, { status: 422 });
       const checks = teacherIds.map(id => candidate(teachers.find(t => t.id === id), slot, data, keyOf(slot)));
       const hard = checks.flatMap(item => item.reasons);
       if (hard.length) return Response.json({ error: hard.join(" · "), hard_conflict: true }, { status: 422 });

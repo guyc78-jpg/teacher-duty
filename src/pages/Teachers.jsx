@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
+import { manageTeacherProfile } from "@/functions/manageTeacherProfile";
 import { getCurrentTeacher, DIVISION_LABELS, isManagement } from "@/lib/dutyUtils";
 import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -121,7 +122,7 @@ function TeacherModal({ teacher: edit, onClose, onSaved }) {
     setSaving(true);
     try {
       if (edit) {
-        await base44.entities.TeacherProfile.update(edit.id, form);
+        await manageTeacherProfile({ action: "update", teacher_id: edit.id, data: form });
       } else {
         await base44.entities.TeacherProfile.create(form);
       }

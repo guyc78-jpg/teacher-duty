@@ -1,6 +1,7 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
 
 import { mins, keyOf, unique, quotaFor, makeSlot, candidate } from "../../shared/dutySlotLogic.js";
+import { isDutyEligible } from "../../shared/dutyEligibility.js";
 
 Deno.serve(async req => {
   try {
@@ -31,6 +32,8 @@ Deno.serve(async req => {
     let assignments = [...(template.assignments || [])], overrideReason = (body.override_reason || "").trim(), changedSlot = null;
     if (body.action === "save_slot") {
       const slot = makeSlot(body, stations, breaks), teacherIds = unique(body.teacher_ids); changedSlot = slot;
+      const blocked = teacherIds.map(id => teachers.find(t => t.id === id)).find(teacher => !isDutyEligible(teacher));
+      if (blocked) return Response.json({ error: "לא ניתן לשבץ מורה זה לתורנות – פטור/מנהל/רכז", hard_conflict: true, critical: true }, { status: 422 });
       if (teacherIds.length > slot.required) return Response.json({ error: `ניתן לבחור עד ${slot.required} מורים` }, { status: 422 });
       const checks = teacherIds.map(id => candidate(teachers.find(t => t.id === id), slot, { ...data, assignments }, keyOf(slot)));
       const hard = checks.flatMap(item => item.reasons); if (hard.length) return Response.json({ error: hard.join(" · "), hard_conflict: true }, { status: 422 });
@@ -40,7 +43,7 @@ Deno.serve(async req => {
     } else if (body.action === "clear_day") assignments = assignments.filter(item => Number(item.day_of_week) !== Number(body.day_of_week));
     else if (body.action === "copy_day") {
       const source = Number(body.day_of_week), target = Number(body.target_day), copied = assignments.filter(item => item.day_of_week === source).map(item => ({ ...item, day_of_week: target }));
-      const trial = [...assignments.filter(item => item.day_of_week !== target), ...copied], validation = validate(trial, { ...data, assignments: trial }, quotaPolicy), hardConflicts = validation.errors.filter(item => item.type === "conflict");
+      const trial = [...assignments.filter(item => item.day_of_week !== target), ...copied], validation = validate(trial, { ...data, assignments: trial }, quotaPolicy), hardConflicts = validation.errors.filter(item => ["conflict", "critical_ineligible_teacher"].includes(item.type));
       if (hardConflicts.length) return Response.json({ error: "לא ניתן להעתיק: קיימות התנגשויות קשיחות", validation }, { status: 422 }); assignments = trial;
     } else if (body.action === "import_assignments") {
       if (!Array.isArray(body.assignments)) return Response.json({ error: "קובץ הגיבוי אינו תקין" }, { status: 422 });
@@ -48,6 +51,8 @@ Deno.serve(async req => {
       const valid = body.assignments.every(item => Number.isInteger(item.day_of_week) && item.day_of_week >= 0 && item.day_of_week <= 4 && validBreaks.has(item.break_type) && validStations.has(item.station_id) && Array.isArray(item.teacher_ids) && item.teacher_ids.every(id => validTeachers.has(id)));
       if (!valid) return Response.json({ error: "קובץ הגיבוי מכיל נתוני שיבוץ לא תקינים" }, { status: 422 });
       assignments = body.assignments.map(item => ({ day_of_week: item.day_of_week, break_type: item.break_type, station_id: item.station_id, teacher_ids: unique(item.teacher_ids), teacher_names: unique(item.teacher_ids).map(id => teachers.find(teacher => teacher.id === id)?.full_name || ""), override_reason: item.override_reason || "ייבוא מגיבוי" }));
+      const importedValidation = validate(assignments, { ...data, assignments }, quotaPolicy);
+      if (importedValidation.errors.some(item => ["conflict", "critical_ineligible_teacher"].includes(item.type))) return Response.json({ error: "לא ניתן לייבא שיבוצים הכוללים מורה חסום", validation: importedValidation }, { status: 422 });
     } else if (body.action === "auto_assign") assignments = autoAssign(data, body.day_of_week);
     else if (body.action === "validate") return Response.json(validate(assignments, data, quotaPolicy));
     else if (body.action === "publish") {
@@ -77,7 +82,7 @@ function autoAssign(data, requestedDay) {
   for (const brk of sortedBreaks.filter(item => (item.active_days || []).map(Number).includes(targetDay))) for (const station of data.stations.filter(item => item.active_break_types?.includes(brk.break_type))) {
     const slot = makeSlot({ day_of_week: targetDay, break_type: brk.break_type, station_id: station.id }, data.stations, data.breaks);
     const existing = assignments.find(item => keyOf(item) === keyOf(slot));
-    const ids = unique(existing?.teacher_ids);
+    const ids = unique(existing?.teacher_ids).filter(id => isDutyEligible(data.teachers.find(teacher => teacher.id === id)));
     while (ids.length < slot.required) {
       const liveAssignments = assignments.filter(item => keyOf(item) !== keyOf(slot));
       liveAssignments.push({ ...slot, teacher_ids: ids });
@@ -98,7 +103,7 @@ function validate(assignments, data, quotaPolicy) {
   for (let day = 0; day <= 4; day++) for (const brk of data.breaks.filter(b => b.active_days?.includes(day))) for (const station of data.stations.filter(s => s.active_break_types?.includes(brk.break_type))) {
     const slot = makeSlot({ day_of_week: day, break_type: brk.break_type, station_id: station.id }, data.stations, data.breaks), item = assignments.find(a => keyOf(a) === keyOf(slot)), actual = item?.teacher_ids?.length || 0;
     if (actual < slot.required) { const issue = { type: "missing", day_of_week: day, break_type: brk.break_type, station_id: station.id, message: `${station.name}: שובצו ${actual} מתוך ${slot.required}` }; errors.push(issue); missing.push(issue); }
-    for (const id of item?.teacher_ids || []) { const check = candidate(data.teachers.find(t => t.id === id), slot, { ...data, assignments }, keyOf(slot)); check.reasons.forEach(message => { errors.push({ type: "conflict", teacher_id: id, message }); conflicts++; }); check.warnings.forEach(message => warnings.push({ type: "teacher_warning", teacher_id: id, message })); }
+    for (const id of item?.teacher_ids || []) { const teacher = data.teachers.find(t => t.id === id), check = candidate(teacher, slot, { ...data, assignments }, keyOf(slot)), eligible = isDutyEligible(teacher); check.reasons.forEach(message => { const critical = !eligible && message === "לא ניתן לשבץ מורה זה לתורנות – פטור/מנהל/רכז"; errors.push({ type: critical ? "critical_ineligible_teacher" : "conflict", teacher_id: id, message: critical ? `${teacher?.full_name || "מורה"}: ${message}` : message }); conflicts++; }); check.warnings.forEach(message => warnings.push({ type: "teacher_warning", teacher_id: id, message })); }
   }
   const under = [], over = [];
   for (const teacher of data.teachers) { const count = assignments.filter(a => a.teacher_ids?.includes(teacher.id)).length, quota = quotaFor(teacher, data.rules); if (!quota) continue; const item = { teacher_id: teacher.id, teacher_name: teacher.full_name, count, quota }; if (count < quota) under.push(item); if (count > quota) over.push(item); }
