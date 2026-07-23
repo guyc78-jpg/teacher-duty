@@ -22,12 +22,11 @@ const Notifications = lazy(() => import('@/pages/Notifications'));
 const Profile = lazy(() => import('@/pages/Profile'));
 const AdminDashboard = lazy(() => import('@/pages/AdminDashboard'));
 const Teachers = lazy(() => import('@/pages/Teachers'));
-const ScheduleEditor = lazy(() => import('@/pages/ScheduleEditor'));
+const DutyManagement = lazy(() => import('@/pages/DutyManagement'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const Onboarding = lazy(() => import('@/pages/Onboarding'));
 const SpecialDays = lazy(() => import('@/pages/SpecialDays'));
 const SpecialDayEditor = lazy(() => import('@/pages/SpecialDayEditor'));
-const FixedSchedule = lazy(() => import('@/pages/FixedSchedule'));
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -67,11 +66,12 @@ const AuthenticatedApp = () => {
             <Route path="/profile" element={<Profile />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/teachers" element={<Teachers />} />
-            <Route path="/schedule" element={<ScheduleEditor />} />
+            <Route path="/duty-management" element={<DutyManagement />} />
+            <Route path="/schedule" element={<Navigate to="/duty-management?tab=actual" replace />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/special-days" element={<SpecialDays />} />
             <Route path="/special-days/:id" element={<SpecialDayEditor />} />
-            <Route path="/fixed-schedule" element={<FixedSchedule />} />
+            <Route path="/fixed-schedule" element={<Navigate to="/duty-management?tab=fixed" replace />} />
           </Route>
         </Route>
         <Route path="*" element={<PageNotFound />} />

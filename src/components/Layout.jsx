@@ -88,8 +88,7 @@ export default function Layout() {
   const managementNav = management ? [
     { to: "/admin", label: "דשבורד", icon: BarChart3 },
     { to: "/teachers", label: "מורים", icon: Users },
-    { to: "/schedule", label: "שיבוץ תורנויות", icon: ClipboardList },
-    { to: "/fixed-schedule", label: "לוח קבוע", icon: Calendar },
+    { to: "/duty-management", label: "ניהול תורנויות", icon: ClipboardList },
     { to: "/special-days", label: "ימים מיוחדים", icon: CalendarRange },
     { to: "/settings", label: "הגדרות", icon: Settings }
   ] : [];

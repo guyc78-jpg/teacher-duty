@@ -12,7 +12,7 @@ import WeekView from "@/components/duty-scheduler/WeekView";
 import SlotEditDialog from "@/components/duty-scheduler/SlotEditDialog";
 import { patchSchedulerData } from "@/components/duty-scheduler/patchSchedulerData";
 
-export default function ScheduleEditor() {
+export default function ScheduleEditor({ embedded = false }) {
   const queryClient = useQueryClient();
   const { data: me, isLoading: meLoading } = useQuery({ queryKey: ["current-teacher"], queryFn: () => getCurrentTeacher() });
   const [view, setView] = useState("day");
@@ -53,7 +53,7 @@ export default function ScheduleEditor() {
 
   return (
     <div className="space-y-3 pb-24 lg:pb-6">
-      <h1 className="text-xl font-bold">שיבוץ תורנויות</h1>
+      {!embedded && <h1 className="text-xl font-bold">שיבוץ תורנויות</h1>}
       <SchedulerTopBar view={view} setView={setView} date={view === "day" ? date : week}
         onDate={value => { if (!value) return; if (schoolDate(fromIso(value))) { setDate(value); setWeek(weekStart(value)); setMessage(""); } else setMessage("ניתן להציג רק ימים ראשון–חמישי"); }}
         onPrevious={() => view === "day" ? setDate(moveSchoolDay(date, -1)) : setWeek(iso(new Date(fromIso(week).setDate(fromIso(week).getDate() - 7))))}
