@@ -1,38 +1,63 @@
-import React from "react";
-import { Edit, Trash2 } from "lucide-react";
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Edit, MoreVertical, Trash2, CalendarPlus, CalendarDays, Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import CloseButton from "@/components/ui/close-button";
-import { DIVISION_LABELS } from "@/lib/dutyUtils";
+import { clearDetailsCache } from "@/components/teachers/details/detailsData";
+import PersonalDetailsSection from "@/components/teachers/details/PersonalDetailsSection";
+import FixedDutiesSection from "@/components/teachers/details/FixedDutiesSection";
+import UpcomingChangesSection from "@/components/teachers/details/UpcomingChangesSection";
+import DutyBalanceSection from "@/components/teachers/details/DutyBalanceSection";
+import AvailabilitySection from "@/components/teachers/details/AvailabilitySection";
+import SwapsSection from "@/components/teachers/details/SwapsSection";
+import AdminAlertsSection from "@/components/teachers/details/AdminAlertsSection";
 import TeacherScheduleSection from "@/components/teachers/TeacherScheduleSection";
 
-const roleLabels = { management: "הנהלה", admin: "מנהל/ת מערכת", coordinator: "רכז/ת", teacher: "מורה", homeroom: "מחנך/ת" };
-
 export default function TeacherDetailsCard({ teacher, onClose, onEdit, onDelete }) {
-  const details = [
-    ["דוא״ל", teacher.email], ["מזהה עובד", teacher.employee_id],
-    ["חטיבה", DIVISION_LABELS[teacher.division]], ["מקצוע", teacher.subject || "—"],
-    ["מקצועות נוספים", teacher.additional_subjects?.join(", ") || "—"], ["תפקיד", roleLabels[teacher.role] || teacher.role],
-    ["שעות שבועיות", teacher.weekly_teaching_hours || 0], ["טלפון", teacher.phone || "—"],
-    ["חינוך כיתה", teacher.is_homeroom ? `${teacher.homeroom_grade || ""} ${teacher.homeroom_class || ""}`.trim() || "כן" : "לא"],
-    ["פטור מתורנות", teacher.is_exempt ? "כן" : "לא"], ["מורה לספורט", teacher.is_sport_teacher ? "כן" : "לא"],
-    ["סטטוס", teacher.is_active ? "פעיל" : "לא פעיל"]
-  ];
+  const navigate = useNavigate();
+  useEffect(() => { clearDetailsCache(); }, [teacher.id]);
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
       <button aria-label="סגירת פרטי מורה" className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative max-h-[88vh] w-full overflow-y-auto rounded-t-2xl bg-background p-5 sm:max-w-2xl sm:rounded-2xl">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div><h2 className="text-lg font-bold">{teacher.full_name}</h2><p className="text-sm text-muted-foreground">כרטיס מורה מלא</p></div>
-          <div className="flex gap-2">
+      <div className="relative flex max-h-[88vh] w-full flex-col rounded-t-2xl bg-background sm:max-w-2xl sm:rounded-2xl">
+        <div className="flex items-center justify-between gap-3 border-b border-border p-4">
+          <div className="min-w-0">
+            <h2 className="truncate text-lg font-bold">{teacher.full_name}</h2>
+            <p className="text-sm text-muted-foreground">כרטיס מורה מקצועי</p>
+          </div>
+          <div className="flex shrink-0 items-center gap-1.5">
             <Button size="sm" variant="outline" onClick={onEdit}><Edit className="h-4 w-4" /> עריכה</Button>
-            {onDelete && <Button size="sm" variant="destructive" onClick={onDelete}><Trash2 className="h-4 w-4" /> מחיקה</Button>}
+            {onDelete && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="icon" variant="ghost" aria-label="פעולות נוספות"><MoreVertical className="h-4 w-4" /></Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={onDelete}>
+                    <Trash2 className="ml-2 h-4 w-4" /> מחיקת מורה
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             <CloseButton onClick={onClose} label="סגירת פרטי המורה" />
           </div>
         </div>
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-xl border border-border p-4 sm:grid-cols-3">
-          {details.map(([label, value]) => <div key={label}><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-0.5 text-sm font-medium">{value}</dd></div>)}
-        </dl>
-        <TeacherScheduleSection teacherId={teacher.id} />
+        <div className="flex flex-wrap gap-2 border-b border-border px-4 py-3">
+          <Button size="sm" variant="secondary" onClick={() => navigate("/fixed-schedule")}><CalendarPlus className="h-4 w-4" /> שבץ לתורנות</Button>
+          <Button size="sm" variant="secondary" onClick={() => navigate("/schedule")}><CalendarDays className="h-4 w-4" /> צפה בלוח השבועי</Button>
+          <Button size="sm" variant="secondary" onClick={() => navigate("/swaps")}><Repeat className="h-4 w-4" /> צור החלפה</Button>
+        </div>
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
+          <PersonalDetailsSection teacher={teacher} />
+          <FixedDutiesSection teacherId={teacher.id} />
+          <UpcomingChangesSection teacher={teacher} />
+          <DutyBalanceSection teacher={teacher} />
+          <AvailabilitySection teacher={teacher} />
+          <TeacherScheduleSection teacherId={teacher.id} />
+          <SwapsSection teacherId={teacher.id} />
+          <AdminAlertsSection teacher={teacher} />
+        </div>
       </div>
     </div>
   );
