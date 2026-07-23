@@ -18,7 +18,8 @@ export default function GeneralSettings() {
 
   useEffect(() => { (async () => {
     const records = await base44.entities.SystemSettings.list();
-    const loaded = { ...defaults, ...(records[0] || {}) };
+    const record = records[0] || {};
+    const loaded = { ...record, ...Object.fromEntries(fields.map(key => [key, record[key] ?? defaults[key]])) };
     setSettings(loaded);
     setSavedSettings(loaded);
   })(); }, []);
