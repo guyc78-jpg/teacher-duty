@@ -1,0 +1,14 @@
+import React, { useEffect, useState } from "react";
+import { CalendarPlus, Loader2, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { manageSpecialDay } from "@/functions/manageSpecialDay";
+import SpecialDayCreateDialog from "@/components/special-days/SpecialDayCreateDialog";
+
+export default function SpecialDays() {
+  const [data, setData] = useState({ days: [], templates: [] }), [loading, setLoading] = useState(true), [creating, setCreating] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState(""); const navigate = useNavigate();
+  useEffect(() => { manageSpecialDay({ action: "list" }).then(r => setData(r.data)).catch(e => setError(e.response?.data?.error || e.message)).finally(() => setLoading(false)); }, []);
+  const create = async payload => { setBusy(true); setError(""); try { const r = await manageSpecialDay({ action: "create", ...payload }); navigate(`/special-days/${r.data.day.id}`); } catch (e) { setError(e.response?.data?.error || e.message); } finally { setBusy(false); } };
+  if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin" /></div>;
+  return <div className="space-y-4"><div className="flex items-center justify-between"><div><h1 className="text-2xl font-bold">ימים מיוחדים</h1><p className="text-sm text-muted-foreground">לוחות נקודתיים שאינם משנים את הגדרות השגרה</p></div><Button onClick={() => setCreating(true)}><Plus />יום מיוחד</Button></div>{error && <p className="status-danger rounded-lg border p-3 text-sm">{error}</p>}{!data.days.length ? <div className="py-16 text-center text-muted-foreground"><CalendarPlus className="mx-auto mb-2 h-10 w-10" /><p>עדיין לא נוצרו ימים מיוחדים</p></div> : <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{data.days.map(day => <button key={day.id} onClick={() => navigate(`/special-days/${day.id}`)} className="rounded-xl border bg-card p-4 text-right hover:border-primary"><div className="flex items-start justify-between gap-2"><h2 className="font-bold">{day.name}</h2><span className={`rounded-full px-2 py-0.5 text-xs ${day.status === "published" ? "bg-success/10 text-success" : day.status === "archived" ? "bg-muted text-muted-foreground" : "bg-warning/10 text-warning"}`}>{day.status === "published" ? "פורסם" : day.status === "archived" ? "ארכיון" : "טיוטה"}</span></div><p className="mt-2 text-sm text-muted-foreground">{day.date} · גרסה {day.version}</p></button>)}</div>}{creating && <SpecialDayCreateDialog items={data.days} templates={data.templates} busy={busy} onClose={() => setCreating(false)} onCreate={create} />}</div>;
+}

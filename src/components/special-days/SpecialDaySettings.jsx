@@ -1,0 +1,16 @@
+import React, { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+export default function SpecialDaySettings({ day, busy, onSave }) {
+  const [form, setForm] = useState(day); useEffect(() => setForm(day), [day]);
+  const set = (key, value) => setForm({ ...form, [key]: value });
+  return <section className="space-y-3 rounded-xl border bg-card p-4"><h2 className="font-bold">הגדרות כלליות</h2>
+    <div className="grid gap-2 sm:grid-cols-3"><Input value={form.name || ""} onChange={e => set("name", e.target.value)} /><select className="h-9 rounded-md border bg-background px-3 text-sm" value={form.type || "other"} onChange={e => set("type", e.target.value)}><option value="purim">פורים</option><option value="memorial">יום הזיכרון</option><option value="semester_end">סיום מחצית</option><option value="year_end">סיום שנה</option><option value="ceremony">טקס</option><option value="other">אחר</option></select><Input type="date" value={form.date || ""} onChange={e => set("date", e.target.value)} /></div>
+    <textarea className="min-h-16 w-full rounded-md border bg-background p-3 text-sm" placeholder="תיאור" value={form.description || ""} onChange={e => set("description", e.target.value)} />
+    <textarea className="min-h-20 w-full rounded-md border bg-background p-3 text-sm" placeholder="הנחיות כלליות" value={form.instructions || ""} onChange={e => set("instructions", e.target.value)} />
+    <div className="grid gap-2 text-sm sm:grid-cols-2"><label className="flex items-center gap-2"><input type="checkbox" checked={!!form.replace_regular_schedule} onChange={e => set("replace_regular_schedule", e.target.checked)} />מחליף את הלוח הרגיל</label><label className="flex items-center gap-2"><input type="checkbox" checked={!!form.respect_regular_schedule} onChange={e => set("respect_regular_schedule", e.target.checked)} />התחשבות במערכת השעות</label><label className="flex items-center gap-2"><input type="checkbox" checked={!!form.allow_regular_overlap} onChange={e => set("allow_regular_overlap", e.target.checked)} />אישור לוחות מקבילים</label><label className="flex items-center gap-2"><input type="checkbox" checked={!!form.allow_multiple_shifts} onChange={e => set("allow_multiple_shifts", e.target.checked)} />אפשר יותר ממשמרת אחת</label></div>
+    <div className="grid gap-2 sm:grid-cols-4"><select className="h-10 rounded-md border bg-background px-3 text-sm" value={form.quota_mode || "full"} onChange={e => set("quota_mode", e.target.value)}><option value="full">מכסה מלאה</option><option value="duration">לפי משך</option><option value="none">לא נספר</option></select><Input type="number" min="1" aria-label="מקסימום משמרות" value={form.max_shifts_per_teacher || 1} onChange={e => set("max_shifts_per_teacher", +e.target.value)} /><Input type="time" aria-label="שעת תזכורת בוקר" value={form.morning_reminder_time || "08:00"} onChange={e => set("morning_reminder_time", e.target.value)} /><Input type="number" min="0" aria-label="דקות לפני משמרת" value={form.pre_shift_reminder_minutes ?? 10} onChange={e => set("pre_shift_reminder_minutes", +e.target.value)} /></div>
+    <Button disabled={busy} onClick={() => onSave(form)}>שמירת הגדרות</Button>
+  </section>;
+}

@@ -7,6 +7,8 @@ import { publishDutyPlan } from "@/functions/publishDutyPlan";
 import { getCurrentTeacher, isManagement } from "@/lib/dutyUtils";
 import { fromIso, iso, moveSchoolDay, schoolDate, weekDates, weekStart } from "@/lib/scheduleViewUtils";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { manageSpecialDay } from "@/functions/manageSpecialDay";
 import DailyMatrix from "@/components/schedule/DailyMatrix";
 import MobileDailyGroups from "@/components/schedule/MobileDailyGroups";
 import PublishReviewDialog from "@/components/schedule/PublishReviewDialog";
@@ -19,7 +21,7 @@ import WeeklyScheduleView from "@/components/schedule/WeeklyScheduleView";
 const emptyFilters = { break_type: "", division: "", level: "", station_id: "", teacher_id: "" };
 export default function ScheduleEditor() {
   const [teacher, setTeacher] = useState(null), [plans, setPlans] = useState([]), [plan, setPlan] = useState(null);
-  const [assignments, setAssignments] = useState([]), [teachers, setTeachers] = useState([]), [stations, setStations] = useState([]), [breaks, setBreaks] = useState([]);
+  const [assignments, setAssignments] = useState([]), [teachers, setTeachers] = useState([]), [stations, setStations] = useState([]), [breaks, setBreaks] = useState([]), [specialDays, setSpecialDays] = useState([]);
   const [loading, setLoading] = useState(true), [busy, setBusy] = useState(false), [view, setView] = useState("day");
   const [date, setDate] = useState(() => { const now = new Date(); while (!schoolDate(now)) now.setDate(now.getDate() + 1); return iso(now); });
   const [week, setWeek] = useState(() => weekStart(iso(new Date()))), [filters, setFilters] = useState(emptyFilters), [editing, setEditing] = useState(null);
@@ -33,8 +35,8 @@ export default function ScheduleEditor() {
   const load = useCallback(async () => {
     const current = await getCurrentTeacher(); setTeacher(current);
     if (current && isManagement(current)) {
-      const [allPlans, allTeachers, allStations, allBreaks] = await Promise.all([base44.entities.DutyPlan.list("-created_date", 50), base44.entities.TeacherProfile.filter({ is_active: true }), base44.entities.Station.filter({ is_active: true }), base44.entities.Break.filter({ is_active: true })]);
-      setPlans(allPlans); setTeachers(allTeachers.sort((a, b) => a.full_name.localeCompare(b.full_name, "he"))); setStations(allStations.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))); setBreaks(allBreaks);
+      const [allPlans, allTeachers, allStations, allBreaks, specialResult] = await Promise.all([base44.entities.DutyPlan.list("-created_date", 50), base44.entities.TeacherProfile.filter({ is_active: true }), base44.entities.Station.filter({ is_active: true }), base44.entities.Break.filter({ is_active: true }), manageSpecialDay({ action: "list" })]);
+      setPlans(allPlans); setTeachers(allTeachers.sort((a, b) => a.full_name.localeCompare(b.full_name, "he"))); setStations(allStations.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))); setBreaks(allBreaks); setSpecialDays((specialResult.data.days || []).filter(d => d.status === "published"));
       const chosen = plan ? allPlans.find(item => item.id === plan.id) : allPlans.find(item => item.status === "draft") || allPlans[0]; if (chosen) await loadPlan(chosen);
     }
     setLoading(false);
@@ -62,7 +64,8 @@ export default function ScheduleEditor() {
   if (!teacher || !isManagement(teacher)) return <p className="py-20 text-center text-muted-foreground">אין הרשאה.</p>;
   return <div className="space-y-3 pb-4"><ScheduleHeader view={view} setView={setView} date={date} onDate={value => { if (schoolDate(fromIso(value))) { setDate(value); setWeek(weekStart(value)); } else setMessage("ניתן להציג רק ימים ראשון–חמישי"); }} onPrevious={() => view === "day" ? setDate(moveSchoolDay(date, -1)) : setWeek(iso(new Date(fromIso(week).setDate(fromIso(week).getDate() - 7))))} onNext={() => view === "day" ? setDate(moveSchoolDay(date, 1)) : setWeek(iso(new Date(fromIso(week).setDate(fromIso(week).getDate() + 7))))} onToday={() => { const today = iso(new Date()); const safe = schoolDate(fromIso(today)) ? today : moveSchoolDay(today, 1); setDate(safe); setWeek(weekStart(safe)); }} />
     <div className="flex flex-wrap gap-2"><select aria-label="בחירת תוכנית" value={plan?.id || ""} onChange={e => loadPlan(plans.find(item => item.id === e.target.value))} className="h-10 min-w-0 basis-full rounded-lg border border-input bg-background px-3 text-sm sm:flex-1 sm:basis-0"><option value="">בחר תוכנית</option>{plans.map(item => <option key={item.id} value={item.id}>{item.name} · גרסה {item.version} · {item.status === "draft" ? "טיוטה" : "פורסם"}</option>)}</select><Button variant="outline" onClick={generate} disabled={busy}><Plus />טיוטה אוטומטית</Button>{plan?.status === "draft" && plan.version > 1 && <Button variant="outline" onClick={restore} disabled={busy}><History />שחזור</Button>}{plan?.status === "draft" && <Button onClick={openReview} disabled={busy}><Send />בדיקה ופרסום</Button>}</div>
-    {message && <p role="status" className="rounded-lg border border-border bg-card p-2 text-sm">{message}</p>}{!plan ? <div className="py-16 text-center text-muted-foreground">יש לבחור תוכנית או ליצור טיוטה חדשה</div> : <><ScheduleFilters filters={filters} setFilters={setFilters} stations={stations} teachers={teachers} />{view === "day" ? <><ScheduleStatBar stats={summaryFor(date)} /><DailyMatrix stations={filteredStations} assignments={visibleAssignments} onEdit={setEditing} statusFor={statusFor} /><MobileDailyGroups stations={filteredStations} assignments={visibleAssignments} onEdit={setEditing} statusFor={statusFor} /></> : <WeeklyScheduleView dates={dates} assignments={visibleAssignments} summaries={weeklySummaries} onOpenDay={day => { setDate(day); setView("day"); }} />}</>}
+    {specialDays.find(s => s.date === date) && <Link to={`/special-days/${specialDays.find(s => s.date === date).id}`} className="block rounded-lg bg-primary p-3 text-sm font-bold text-primary-foreground">יום מיוחד: {specialDays.find(s => s.date === date).name}</Link>}
+    {message && <p role="status" className="rounded-lg border border-border bg-card p-2 text-sm">{message}</p>}{!plan ? <div className="py-16 text-center text-muted-foreground">יש לבחור תוכנית או ליצור טיוטה חדשה</div> : <><ScheduleFilters filters={filters} setFilters={setFilters} stations={stations} teachers={teachers} />{view === "day" ? <><ScheduleStatBar stats={summaryFor(date)} /><DailyMatrix stations={filteredStations} assignments={visibleAssignments} onEdit={setEditing} statusFor={statusFor} /><MobileDailyGroups stations={filteredStations} assignments={visibleAssignments} onEdit={setEditing} statusFor={statusFor} /></> : <WeeklyScheduleView dates={dates} assignments={visibleAssignments} summaries={weeklySummaries} specialDays={specialDays} onOpenDay={day => { setDate(day); setView("day"); }} />}</>}
     {editing && plan?.status === "draft" && <TeacherPickerDialog context={editing} plan={plan} date={date} onClose={() => setEditing(null)} onSaved={async result => { setEditing(null); setPlan(result.plan); await loadPlan(result.plan); setMessage("השינוי נשמר אוטומטית בטיוטה"); }} />}{review && <PublishReviewDialog validation={validation} busy={busy} onClose={() => setReview(false)} onPublish={publish} />}
   </div>;
 }

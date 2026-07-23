@@ -1,0 +1,10 @@
+import React, { useEffect, useState } from "react";
+import { Loader2, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { manageSpecialDay } from "@/functions/manageSpecialDay";
+
+export default function SpecialTeacherDialog({ dayId, cell, busy, onClose, onAssign, onRemove }) {
+  const [candidates, setCandidates] = useState(null);
+  useEffect(() => { manageSpecialDay({ action: "candidates", special_day_id: dayId, time_slot_id: cell.slot.id, position_id: cell.position.id }).then(r => setCandidates(r.data.candidates)); }, [dayId, cell.slot.id, cell.position.id]);
+  return <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-3 sm:items-center" onClick={onClose}><div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-xl bg-background p-4" onClick={e => e.stopPropagation()}><h2 className="font-bold">{cell.position.name} · {cell.slot.name}</h2><div className="my-3 space-y-2">{cell.assignments.map(a => <div key={a.id} className="flex items-center justify-between rounded-lg bg-muted p-2 text-sm"><span>{a.teacher_name}</span><button className="text-destructive" aria-label={`הסרת ${a.teacher_name}`} disabled={busy} onClick={() => onRemove(a.id)}><Trash2 className="h-4 w-4" /></button></div>)}</div><h3 className="mb-2 text-sm font-bold">מורים מומלצים וזמינים</h3>{!candidates ? <Loader2 className="mx-auto animate-spin" /> : <div className="space-y-1">{candidates.map(c => <button key={c.id} disabled={!c.available || busy} onClick={() => onAssign(c.id)} className={`w-full rounded-lg border p-2 text-right text-sm ${c.available ? "hover:border-primary hover:bg-primary/5" : "cursor-not-allowed bg-muted/40 text-muted-foreground"}`}><span className="font-medium">{c.full_name}</span><small className="block">{c.available ? `${c.count} משמרות · ${c.minutes} דקות` : c.reasons.join(" · ")}</small></button>)}</div>}<Button variant="outline" className="mt-3 w-full" onClick={onClose}>סגירה</Button></div></div>;
+}

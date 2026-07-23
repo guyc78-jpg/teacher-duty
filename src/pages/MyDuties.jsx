@@ -4,10 +4,13 @@ import { getCurrentTeacher, formatDateWithDay, formatTimeRange, todayISO, isScho
 import { Clock, MapPin, Calendar, CheckCircle, Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { manageSpecialDay } from "@/functions/manageSpecialDay";
+import SpecialDutyCards from "@/components/special-days/SpecialDutyCards";
 
 export default function MyDuties() {
   const [teacher, setTeacher] = useState(null);
   const [assignments, setAssignments] = useState([]);
+  const [specialAssignments, setSpecialAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState("week"); // day | week | month
   const [confirming, setConfirming] = useState(null);
@@ -16,8 +19,10 @@ export default function MyDuties() {
     const t = await getCurrentTeacher();
     setTeacher(t);
     if (t) {
-      const all = await base44.entities.Assignment.filter({ teacher_id: t.id, plan_status: "published" }, "date", 200);
-      setAssignments(all.filter(a => isSchoolDay(a.date)).sort((a, b) => a.date.localeCompare(b.date)));
+      const [all, specialResult] = await Promise.all([base44.entities.Assignment.filter({ teacher_id: t.id, plan_status: "published" }, "date", 200), manageSpecialDay({ action: "my_assignments" })]);
+      const special = specialResult.data.assignments || [], replacementDates = new Set((specialResult.data.days || []).filter(d => d.replace_regular_schedule).map(d => d.date));
+      setAssignments(all.filter(a => isSchoolDay(a.date) && !replacementDates.has(a.date)).sort((a, b) => a.date.localeCompare(b.date)));
+      setSpecialAssignments(special);
     }
     setLoading(false);
   }, []);
@@ -90,6 +95,8 @@ export default function MyDuties() {
           </button>
         ))}
       </div>
+
+      <SpecialDutyCards assignments={specialAssignments} />
 
       {dates.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">

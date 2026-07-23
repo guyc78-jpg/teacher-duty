@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Outlet, NavLink, useNavigate, Navigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { getCurrentTeacher, isManagement, isAdmin } from "@/lib/dutyUtils";
-import { Menu, Bell, Calendar, Users, User, LogOut, Settings, ClipboardList, BarChart3, AlertTriangle, Repeat, Home as HomeIcon, ShieldCheck, Moon, Sun } from "lucide-react";
+import { Menu, Bell, Calendar, CalendarRange, Users, User, LogOut, Settings, ClipboardList, BarChart3, AlertTriangle, Repeat, Home as HomeIcon, ShieldCheck, Moon, Sun } from "lucide-react";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import CloseButton from "@/components/ui/close-button";
 import PushToggle from "@/components/PushToggle";
@@ -86,6 +86,7 @@ export default function Layout() {
     { to: "/admin", label: "דשבורד", icon: BarChart3 },
     { to: "/teachers", label: "מורים", icon: Users },
     { to: "/schedule", label: "עורך שיבוצים", icon: ClipboardList },
+    { to: "/special-days", label: "ימים מיוחדים", icon: CalendarRange },
     { to: "/settings", label: "הגדרות", icon: Settings }
   ] : [];
 

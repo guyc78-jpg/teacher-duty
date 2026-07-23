@@ -1,0 +1,120 @@
+{
+  "name": "SpecialDay",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "\u05e9\u05dd \u05d4\u05d0\u05d9\u05e8\u05d5\u05e2"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "purim",
+        "memorial",
+        "semester_end",
+        "year_end",
+        "ceremony",
+        "other"
+      ],
+      "default": "other",
+      "title": "\u05e1\u05d5\u05d2"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "title": "\u05ea\u05d0\u05e8\u05d9\u05da"
+    },
+    "description": {
+      "type": "string",
+      "title": "\u05ea\u05d9\u05d0\u05d5\u05e8"
+    },
+    "instructions": {
+      "type": "string",
+      "title": "\u05d4\u05e0\u05d7\u05d9\u05d5\u05ea"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "published",
+        "archived"
+      ],
+      "default": "draft",
+      "title": "\u05e1\u05d8\u05d8\u05d5\u05e1"
+    },
+    "replace_regular_schedule": {
+      "type": "boolean",
+      "default": true,
+      "title": "\u05de\u05d7\u05dc\u05d9\u05e3 \u05dc\u05d5\u05d7 \u05e8\u05d2\u05d9\u05dc"
+    },
+    "allow_regular_overlap": {
+      "type": "boolean",
+      "default": false,
+      "title": "\u05d0\u05d9\u05e9\u05d5\u05e8 \u05dc\u05d5\u05d7\u05d5\u05ea \u05de\u05e7\u05d1\u05d9\u05dc\u05d9\u05dd"
+    },
+    "respect_regular_schedule": {
+      "type": "boolean",
+      "default": true,
+      "title": "\u05d4\u05ea\u05d7\u05e9\u05d1\u05d5\u05ea \u05d1\u05de\u05e2\u05e8\u05db\u05ea \u05e9\u05e2\u05d5\u05ea"
+    },
+    "quota_mode": {
+      "type": "string",
+      "enum": [
+        "full",
+        "duration",
+        "none"
+      ],
+      "default": "full",
+      "title": "\u05d7\u05d9\u05e9\u05d5\u05d1 \u05de\u05db\u05e1\u05d4"
+    },
+    "allow_multiple_shifts": {
+      "type": "boolean",
+      "default": false,
+      "title": "\u05de\u05e1\u05e4\u05e8 \u05de\u05e9\u05de\u05e8\u05d5\u05ea \u05dc\u05de\u05d5\u05e8\u05d4"
+    },
+    "max_shifts_per_teacher": {
+      "type": "number",
+      "default": 1,
+      "title": "\u05de\u05e7\u05e1\u05d9\u05de\u05d5\u05dd \u05de\u05e9\u05de\u05e8\u05d5\u05ea"
+    },
+    "morning_reminder_time": {
+      "type": "string",
+      "default": "08:00",
+      "title": "\u05ea\u05d6\u05db\u05d5\u05e8\u05ea \u05d1\u05d5\u05e7\u05e8"
+    },
+    "pre_shift_reminder_minutes": {
+      "type": "number",
+      "default": 10,
+      "title": "\u05d3\u05e7\u05d5\u05ea \u05dc\u05ea\u05d6\u05db\u05d5\u05e8\u05ea \u05dc\u05e4\u05e0\u05d9 \u05de\u05e9\u05de\u05e8\u05ea"
+    },
+    "version": {
+      "type": "number",
+      "default": 1,
+      "title": "\u05d2\u05e8\u05e1\u05d4"
+    },
+    "created_by_id": {
+      "type": "string",
+      "title": "\u05d9\u05d5\u05e6\u05e8"
+    },
+    "created_by_name": {
+      "type": "string",
+      "title": "\u05e9\u05dd \u05d9\u05d5\u05e6\u05e8"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "\u05e4\u05d5\u05e8\u05e1\u05dd \u05d1\u05ea\u05d0\u05e8\u05d9\u05da"
+    }
+  },
+  "required": [
+    "name",
+    "type",
+    "date"
+  ],
+  "access": {
+    "read": "admin",
+    "create": "admin",
+    "update": "admin",
+    "delete": "admin"
+  }
+}

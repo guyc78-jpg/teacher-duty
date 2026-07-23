@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { getCurrentTeacher, formatDateWithDay, formatTimeRange, todayISO, isSchoolDay, BREAK_TYPES, STATUS_LABELS, HEBREW_DAYS, HEBREW_MONTHS } from "@/lib/dutyUtils";
 import { CheckCircle, Clock, MapPin, Calendar, AlertTriangle, Repeat, Bell } from "lucide-react";
+import { manageSpecialDay } from "@/functions/manageSpecialDay";
+import SpecialDutyCards from "@/components/special-days/SpecialDutyCards";
 
 function getCountdownLabel(assignment, now) {
   if (!assignment?.date || !assignment?.start_time) return "";
@@ -17,6 +19,7 @@ function getCountdownLabel(assignment, now) {
 export default function Home() {
   const [teacher, setTeacher] = useState(null);
   const [assignments, setAssignments] = useState([]);
+  const [specialAssignments, setSpecialAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(null);
   const [currentTime, setCurrentTime] = useState(Date.now());
@@ -25,9 +28,13 @@ export default function Home() {
     const t = await getCurrentTeacher();
     setTeacher(t);
     if (t) {
-      const all = await base44.entities.Assignment.filter({ teacher_id: t.id, plan_status: "published" }, "date", 100);
-      const sorted = all.filter(a => isSchoolDay(a.date)).sort((a, b) => a.date.localeCompare(b.date));
-      setAssignments(sorted);
+      const [all, specialResult] = await Promise.all([
+        base44.entities.Assignment.filter({ teacher_id: t.id, plan_status: "published" }, "date", 100),
+        manageSpecialDay({ action: "my_assignments" })
+      ]);
+      const special = specialResult.data.assignments || [], replacementDates = new Set((specialResult.data.days || []).filter(d => d.replace_regular_schedule).map(d => d.date));
+      const sorted = all.filter(a => isSchoolDay(a.date) && !replacementDates.has(a.date)).sort((a, b) => a.date.localeCompare(b.date));
+      setAssignments(sorted); setSpecialAssignments(special.sort((a, b) => `${a.date}${a.start_time}`.localeCompare(`${b.date}${b.start_time}`)));
     }
     setLoading(false);
   }, []);
@@ -139,6 +146,8 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      <SpecialDutyCards assignments={specialAssignments.filter(a => a.date >= today).slice(0, 5)} />
 
       {/* Today's duties */}
       {todayDuties.length > 0 && (

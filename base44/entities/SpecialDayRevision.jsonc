@@ -1,0 +1,47 @@
+{
+  "name": "SpecialDayRevision",
+  "type": "object",
+  "properties": {
+    "special_day_id": {
+      "type": "string",
+      "title": "\u05d9\u05d5\u05dd \u05de\u05d9\u05d5\u05d7\u05d3"
+    },
+    "version": {
+      "type": "number",
+      "title": "\u05d2\u05e8\u05e1\u05d4"
+    },
+    "action": {
+      "type": "string",
+      "title": "\u05e4\u05e2\u05d5\u05dc\u05d4"
+    },
+    "actor_id": {
+      "type": "string",
+      "title": "\u05de\u05d1\u05e6\u05e2"
+    },
+    "actor_name": {
+      "type": "string",
+      "title": "\u05e9\u05dd \u05de\u05d1\u05e6\u05e2"
+    },
+    "snapshot": {
+      "type": "object",
+      "title": "\u05e6\u05d9\u05dc\u05d5\u05dd \u05de\u05e6\u05d1"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "\u05d6\u05de\u05df \u05d9\u05e6\u05d9\u05e8\u05d4"
+    }
+  },
+  "required": [
+    "special_day_id",
+    "version",
+    "action",
+    "snapshot"
+  ],
+  "access": {
+    "read": "admin",
+    "create": "admin",
+    "update": "admin",
+    "delete": "admin"
+  }
+}

@@ -1,0 +1,8 @@
+import React, { useState } from "react";
+import { AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+export default function SpecialValidationPanel({ validation, busy, onValidate, onPublish }) {
+  const [reason, setReason] = useState(""); const errors = validation?.errors || [], warnings = validation?.warnings || [];
+  return <section className="rounded-xl border bg-card p-4"><div className="flex flex-wrap items-center justify-between gap-2"><div><h2 className="font-bold">בדיקת תקינות</h2><p className="text-xs text-muted-foreground">{errors.length} שגיאות · {warnings.length} אזהרות · {(validation?.missing || []).length} עמדות חסרות</p></div><Button variant="outline" disabled={busy} onClick={onValidate}>בדיקה מלאה</Button></div>{validation && <div className="mt-3 space-y-2">{!errors.length && !warnings.length && <p className="flex items-center gap-2 text-sm text-success"><CheckCircle2 className="h-4 w-4" />הלוח תקין ומוכן לפרסום</p>}{errors.map((x,i) => <p key={`e${i}`} className="flex gap-2 rounded-lg border p-2 text-sm status-danger"><XCircle className="h-4 w-4 shrink-0" />{x.message}</p>)}{warnings.map((x,i) => <p key={`w${i}`} className="flex gap-2 rounded-lg border p-2 text-sm status-warning"><AlertTriangle className="h-4 w-4 shrink-0" />{x.message}</p>)}</div>}{warnings.length > 0 && <textarea className="mt-3 min-h-16 w-full rounded-md border bg-background p-2 text-sm" placeholder="סיבת עקיפת האזהרות (חובה)" value={reason} onChange={e => setReason(e.target.value)} />}<Button className="mt-3 w-full" disabled={busy || errors.length > 0 || (warnings.length > 0 && !reason.trim())} onClick={() => onPublish(reason)}>פרסום מפורש</Button></section>;
+}
