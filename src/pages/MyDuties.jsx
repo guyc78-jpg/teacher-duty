@@ -146,7 +146,7 @@ export default function MyDuties() {
                             </Button>
                           )}
                           {a.status === "scheduled" && (
-                            <Link to="/swaps">
+                            <Link to={`/swaps?duty=${a.date}|${a.break_type}|${a.station_id || ""}`}>
                               <Button size="sm" variant="outline" className="h-8">
                                 <Repeat className="w-3.5 h-3.5 ml-1" /> החלפה
                               </Button>
