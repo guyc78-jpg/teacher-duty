@@ -106,7 +106,7 @@ export default function Layout() {
           <div className="flex items-center">
             <PushToggle />
             <button onClick={toggleDark} className="min-w-11 min-h-11 flex items-center justify-center" aria-label={dark ? "מעבר למצב בהיר" : "מעבר למצב כהה"}>
-              {dark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
           </div>
         </div>
