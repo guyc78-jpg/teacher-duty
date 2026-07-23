@@ -24,11 +24,11 @@ export default function TeacherRow({ teacher, onOpen, onDelete }) {
         </div>
       </div>
       <div className="min-w-0 flex-1">
-        <div className="flex min-w-0 items-start gap-2">
-          <span className={`mt-0.5 shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none ${tag.badge}`}>
+        <div className="flex min-w-0 items-center gap-1.5">
+          <p className="min-w-0 truncate text-sm font-semibold leading-tight" title={teacher.full_name}>{teacher.full_name}</p>
+          <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none ${tag.badge}`}>
             {tag.label}
           </span>
-          <p className="min-w-0 break-words text-sm font-semibold leading-tight">{teacher.full_name}</p>
         </div>
         <p className="mt-0.5 text-xs text-muted-foreground">
           {teacher.subject || "—"} · {teacher.weekly_teaching_hours || 0} שעות/שבוע
