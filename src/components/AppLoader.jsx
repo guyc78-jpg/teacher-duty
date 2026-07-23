@@ -18,7 +18,10 @@ export default function AppLoader() {
       <h1 className="app-loader-fade mt-7 font-heading text-xl font-bold tracking-tight text-foreground">
         מערכת תורנויות
       </h1>
-      <p className="app-loader-fade mt-1 text-xs text-muted-foreground" style={{ animationDelay: "250ms" }}>
+      <p className="app-loader-fade mt-1 text-sm font-medium text-muted-foreground" style={{ animationDelay: "200ms" }}>
+        אורט ״הנרי״ רונסון
+      </p>
+      <p className="app-loader-fade mt-1 text-xs text-muted-foreground" style={{ animationDelay: "300ms" }}>
         מסדרים את הלוח…
       </p>
       <div className="app-loader-fade mt-7 h-0.5 w-44 overflow-hidden rounded-full bg-muted" style={{ animationDelay: "350ms" }}>
