@@ -99,8 +99,8 @@ export default function Layout() {
       {/* Top bar - mobile */}
       <header className="lg:hidden sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center justify-between px-3 h-12">
-          <button onClick={() => setMobileOpen(true)} className="min-w-11 min-h-11 flex items-center justify-center -mr-2" aria-label="פתיחת תפריט">
-            <Menu className="w-5 h-5" />
+          <button type="button" onClick={() => setMobileOpen(true)} className="relative z-10 flex h-12 w-12 shrink-0 touch-manipulation items-center justify-center" aria-label="פתיחת תפריט">
+            <Menu className="h-6 w-6 pointer-events-none" />
           </button>
           <span className="font-bold text-sm">תורנויות מורים</span>
           <div className="flex items-center">
