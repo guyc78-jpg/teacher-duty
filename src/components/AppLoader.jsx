@@ -21,14 +21,16 @@ export default function AppLoader() {
       <p className="app-loader-fade mt-1 text-sm font-medium text-muted-foreground" style={{ animationDelay: "200ms" }}>
         אורט ״הנרי״ רונסון
       </p>
-      <div className="app-loader-fade mt-6 grid w-44 grid-cols-5 gap-1 rounded-lg border border-border bg-card p-2 shadow-sm" style={{ animationDelay: "300ms" }} aria-hidden="true">
-        {Array.from({ length: 15 }, (_, i) => (
-          <span
-            key={i}
-            className="app-loader-board-cell h-2.5 rounded-sm bg-primary"
-            style={{ animationDelay: `${i * 110}ms` }}
-          />
-        ))}
+      <div className="app-loader-fade mt-6" style={{ animationDelay: "300ms" }} aria-hidden="true">
+        <div className="app-loader-clock relative h-16 w-16 rounded-full border-2 border-primary/30 bg-card shadow-sm">
+          <span className="absolute left-1/2 top-1 h-1.5 w-0.5 -translate-x-1/2 rounded-full bg-primary/50" />
+          <span className="absolute bottom-1 left-1/2 h-1.5 w-0.5 -translate-x-1/2 rounded-full bg-primary/50" />
+          <span className="absolute right-1 top-1/2 h-0.5 w-1.5 -translate-y-1/2 rounded-full bg-primary/50" />
+          <span className="absolute left-1 top-1/2 h-0.5 w-1.5 -translate-y-1/2 rounded-full bg-primary/50" />
+          <span className="app-loader-clock-hour absolute bottom-1/2 left-1/2 h-4 w-1 origin-bottom rounded-full bg-primary" />
+          <span className="app-loader-clock-minute absolute bottom-1/2 left-1/2 h-5 w-0.5 origin-bottom rounded-full bg-primary" />
+          <span className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary" />
+        </div>
       </div>
     </div>
   );
