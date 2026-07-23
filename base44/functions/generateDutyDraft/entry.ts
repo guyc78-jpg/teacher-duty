@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { SCHOOL_DAYS, isSchoolDate } from '../../shared/schoolDays.js';
 
-// מנוע שיבוץ אוטומטי — יוצר טיוטת שיבוץ בלבד, ללא פרסום
+// מנוע שיבוץ אוטומטי — יוצר ושומר לוח שיבוצים ללא פרסום
 // כללים: ימים א׳–ה׳ בלבד, בדיקת התנגשויות, עומס יומי, רוטציה, הוגנות
 const BREAK_ORDER = { big: 1, medium: 2, small: 3 };
 
@@ -75,13 +75,13 @@ Deno.serve(async (req) => {
       }, { status: 422 });
     }
 
-    // יצירת תוכנית טיוטה
+    // יצירת תוכנית שמורה
     const plan = await base44.asServiceRole.entities.DutyPlan.create({
-      name: plan_name || `טיוטה ${toISODate(new Date())}`,
+      name: plan_name || `לוח ${toISODate(new Date())}`,
       start_date,
       end_date,
       version: 1,
-      status: "draft",
+      status: "saved",
       is_management,
       created_by: teacher.full_name,
       notes: "נוצר אוטומטית ע״י מנוע השיבוץ"
@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
                 teacher_name: candidate.full_name,
                 source: fixedSlot ? "manual" : "auto",
                 status: "scheduled",
-                plan_status: "draft"
+                plan_status: "saved"
               });
               fairnessTracker[candidate.id].count++;
               fairnessTracker[candidate.id].minutes += (timeToMin(brk.end_time) - timeToMin(brk.start_time));
@@ -192,7 +192,7 @@ Deno.serve(async (req) => {
     await base44.asServiceRole.entities.AuditLog.create({
       user_id: user.id,
       user_name: teacher.full_name,
-      action: "create_draft",
+      action: "create_saved_plan",
       entity_type: "DutyPlan",
       entity_id: plan.id,
       new_value: JSON.stringify({ dates: schoolDates.length, assignments: assignments.length, conflicts: conflicts.length }),

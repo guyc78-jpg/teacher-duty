@@ -43,9 +43,9 @@ Deno.serve(async (req) => {
       return Response.json({ candidates });
     }
 
-    if (plan.status !== "draft") return Response.json({ error: "ניתן לערוך טיוטה בלבד" }, { status: 409 });
+    if (plan.status !== "saved") return Response.json({ error: "ניתן לערוך תוכנית שמורה בלבד" }, { status: 409 });
     if (body.expected_plan_updated_date && plan.updated_date !== body.expected_plan_updated_date) {
-      return Response.json({ error: "הטיוטה השתנתה על ידי משתמש אחר. יש לרענן לפני שמירה.", code: "concurrent_change" }, { status: 409 });
+      return Response.json({ error: "התוכנית השתנתה על ידי משתמש אחר. יש לרענן לפני שמירה.", code: "concurrent_change" }, { status: 409 });
     }
 
     if (action === "restore") {
@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
       if (availability.warnings.length && !body.override_reason?.trim()) return Response.json({ error: "נדרשת סיבת חריגה", warnings: availability.warnings, requires_reason: true }, { status: 422 });
     }
 
-    const payload = { ...assignment, teacher_id: teacher?.id || null, teacher_name: teacher?.full_name || "", source: "manual", plan_status: "draft" };
+    const payload = { ...assignment, teacher_id: teacher?.id || null, teacher_name: teacher?.full_name || "", source: "manual", plan_status: "saved" };
     delete payload.id; delete payload.created_date; delete payload.updated_date; delete payload.created_by_id;
     const saved = previous
       ? await base44.asServiceRole.entities.Assignment.update(previous.id, payload)

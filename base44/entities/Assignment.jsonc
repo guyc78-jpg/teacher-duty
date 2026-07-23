@@ -85,11 +85,11 @@
     "plan_status": {
       "type": "string",
       "enum": [
-        "draft",
+        "saved",
         "published"
       ],
       "title": "\u05e1\u05d8\u05d8\u05d5\u05e1 \u05ea\u05d5\u05db\u05e0\u05d9\u05ea",
-      "default": "draft"
+      "default": "saved"
     },
     "change_history": {
       "type": "array",

@@ -74,10 +74,10 @@
     "plan_status": {
       "type": "string",
       "enum": [
-        "draft",
+        "saved",
         "published"
       ],
-      "default": "draft",
+      "default": "saved",
       "title": "\u05e1\u05d8\u05d8\u05d5\u05e1 \u05dc\u05d5\u05d7"
     }
   },

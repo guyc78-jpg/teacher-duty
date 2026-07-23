@@ -15,7 +15,7 @@ Deno.serve(async req => {
     const [profiles, templates] = await Promise.all([e.TeacherProfile.filter({ user_id: user.id }, "-updated_date", 1), e.FixedDutyTemplate.list("-updated_date", 1)]), actor = profiles[0];
     if (!actor || actor.role !== "admin") return Response.json({ error: "נדרשת הרשאת מנהל/ת מערכת" }, { status: 403 });
     let template = templates[0];
-    if (!template) template = await e.FixedDutyTemplate.create({ name: "לוח תורנויות קבוע", status: "draft", version: 1, assignments: [], published_assignments: [] });
+    if (!template) template = await e.FixedDutyTemplate.create({ name: "לוח תורנויות קבוע", status: "saved", version: 1, assignments: [], published_assignments: [] });
     if (body.action === "load") {
       const [stations, breaks, settings] = await Promise.all([e.Station.filter({ is_active: true }, "sort_order", 100), e.Break.filter({ is_active: true }, "sort_order", 25), e.SystemSettings.list("-updated_date", 1)]);
       const { published_assignments: ignoredPublished, ...templateView } = template;
@@ -62,8 +62,8 @@ Deno.serve(async req => {
       template = await e.FixedDutyTemplate.update(template.id, { status: "published", version: (template.version || 1) + 1, assignments, published_assignments: assignments, published_at: new Date().toISOString(), published_by: actor.full_name, last_override_reason: overrideReason });
       await audit(e, user, actor, template.id, "publish_fixed_schedule", { version: template.version, reason: overrideReason });
       return Response.json(pack(template, { ...data, assignments }, quotaPolicy));
-    } else if (body.action !== "save_draft") return Response.json({ error: "פעולה לא מוכרת" }, { status: 400 });
-    template = await e.FixedDutyTemplate.update(template.id, { status: "draft", version: (template.version || 1) + 1, assignments, last_override_reason: overrideReason });
+    } else if (body.action !== "save") return Response.json({ error: "פעולה לא מוכרת" }, { status: 400 });
+    template = await e.FixedDutyTemplate.update(template.id, { status: "saved", version: (template.version || 1) + 1, assignments, last_override_reason: overrideReason });
     await audit(e, user, actor, template.id, body.action, { day: body.day_of_week, target: body.target_day });
     if (body.action === "save_slot") {
       const { assignments: ignoredAssignments, published_assignments: ignoredPublished, ...templateMeta } = template;

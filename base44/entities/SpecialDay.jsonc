@@ -35,11 +35,11 @@
     "status": {
       "type": "string",
       "enum": [
-        "draft",
+        "saved",
         "published",
         "archived"
       ],
-      "default": "draft",
+      "default": "saved",
       "title": "\u05e1\u05d8\u05d8\u05d5\u05e1"
     },
     "replace_regular_schedule": {

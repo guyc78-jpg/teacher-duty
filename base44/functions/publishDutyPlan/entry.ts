@@ -12,8 +12,8 @@ Deno.serve(async (req) => {
     const body = await req.json();
     if (!body.plan_id) return Response.json({ error: "נדרש מזהה תוכנית" }, { status: 400 });
     const plan = await base44.asServiceRole.entities.DutyPlan.get(body.plan_id);
-    if (!plan || plan.status !== "draft") return Response.json({ error: "הטיוטה אינה זמינה לפרסום" }, { status: 409 });
-    if (body.expected_updated_date && plan.updated_date !== body.expected_updated_date) return Response.json({ error: "הטיוטה השתנתה במקביל. יש לרענן לפני פרסום.", code: "concurrent_change" }, { status: 409 });
+    if (!plan || plan.status !== "saved") return Response.json({ error: "התוכנית השמורה אינה זמינה לפרסום" }, { status: 409 });
+    if (body.expected_updated_date && plan.updated_date !== body.expected_updated_date) return Response.json({ error: "התוכנית השתנתה במקביל. יש לרענן לפני פרסום.", code: "concurrent_change" }, { status: 409 });
 
     const [assignments, teachers, schedules, absences, stations, breaks, rules, published] = await Promise.all([
       base44.asServiceRole.entities.Assignment.filter({ plan_id: plan.id }),
