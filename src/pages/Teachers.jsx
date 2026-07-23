@@ -19,6 +19,14 @@ function compareByLastName(a, b) {
   return (a.full_name || "").trim().localeCompare((b.full_name || "").trim(), "he");
 }
 
+function normalizeSubjectName(value) {
+  return (value || "").normalize("NFKC").trim().replace(/\s+/g, " ");
+}
+
+function subjectKey(value) {
+  return normalizeSubjectName(value).toLocaleLowerCase("he");
+}
+
 export default function Teachers() {
   const [teacher, setTeacher] = useState(null);
   const [teachers, setTeachers] = useState([]);
@@ -57,11 +65,18 @@ export default function Teachers() {
   if (loading) return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" /></div>;
   if (!teacher || !isManagement(teacher)) return <p className="text-center py-20 text-muted-foreground">אין הרשאה.</p>;
 
-  const subjects = [...new Set(teachers.flatMap(t => [t.subject, ...(t.additional_subjects || [])]).filter(Boolean))].sort((a, b) => a.localeCompare(b, "he"));
+  const subjects = [...new Map(
+    teachers
+      .flatMap(t => [t.subject, ...(t.additional_subjects || [])])
+      .map(normalizeSubjectName)
+      .filter(Boolean)
+      .map(subject => [subjectKey(subject), subject])
+  ).values()].sort((a, b) => a.localeCompare(b, "he"));
   const filtered = teachers.filter(t => {
     const matchesSearch = t.full_name?.includes(search) || t.email?.includes(search) || t.employee_id?.includes(search) || t.subject?.includes(search);
     const matchesDivision = !filters.division || t.division === filters.division;
-    const matchesSubject = !filters.subject || t.subject === filters.subject || t.additional_subjects?.includes(filters.subject);
+    const selectedSubjectKey = subjectKey(filters.subject);
+    const matchesSubject = !filters.subject || subjectKey(t.subject) === selectedSubjectKey || t.additional_subjects?.some(subject => subjectKey(subject) === selectedSubjectKey);
     const matchesExempt = !filters.exempt || (filters.exempt === "yes" ? t.is_exempt : !t.is_exempt);
     const matchesStatus = !filters.status || (filters.status === "active" ? t.is_active : !t.is_active);
     return matchesSearch && matchesDivision && matchesSubject && matchesExempt && matchesStatus;
