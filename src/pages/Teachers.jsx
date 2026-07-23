@@ -166,9 +166,10 @@ function TeacherModal({ teacher: edit, onClose, onSaved }) {
             </div>
             <div>
               <Label>תפקיד</Label>
-              <select value={form.role} onChange={e => set("role", e.target.value)} className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm">
+              <select aria-label="תפקיד" value={form.role} onChange={e => set("role", e.target.value)} className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm">
                 <option value="teacher">מורה</option>
                 <option value="homeroom">מחנך/ת</option>
+                <option value="counselor">יועץ/ת</option>
                 <option value="coordinator">רכז/ת</option>
                 <option value="admin">מנהל/ת מערכת</option>
                 <option value="management">הנהלה</option>

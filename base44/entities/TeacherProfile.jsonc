@@ -44,7 +44,8 @@
         "admin",
         "coordinator",
         "teacher",
-        "homeroom"
+        "homeroom",
+        "counselor"
       ],
       "title": "\u05ea\u05e4\u05e7\u05d9\u05d3 \u05de\u05e2\u05e8\u05db\u05ea",
       "default": "teacher"

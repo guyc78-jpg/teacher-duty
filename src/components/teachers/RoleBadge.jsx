@@ -4,6 +4,7 @@ const ROLE_STYLES = {
   admin: { block: "bg-amber-500 text-white", badge: "bg-amber-500 text-white" },
   coordinator: { block: "bg-emerald-600 text-white", badge: "bg-emerald-600 text-white" },
   homeroom: { block: "bg-sky-600 text-white", badge: "bg-sky-600 text-white" },
+  counselor: { block: "bg-primary text-primary-foreground", badge: "bg-primary/10 text-primary" },
   exempt: { block: "bg-rose-600 text-white", badge: "bg-rose-600 text-white" },
   teacher: { block: "bg-muted text-muted-foreground", badge: "bg-muted text-muted-foreground border border-border" }
 };
@@ -18,9 +19,10 @@ export function getRoleTag(teacher) {
   if (t.role === "admin" || t.role === "management") key = "admin";
   else if (t.role === "coordinator") key = "coordinator";
   else if (t.is_homeroom || t.role === "homeroom") key = "homeroom";
+  else if (t.role === "counselor") key = "counselor";
   else if (t.is_exempt) key = "exempt";
   else key = "teacher";
-  const labels = { admin: "מנהל/ת", coordinator: "רכז/ת", homeroom: "מחנך/ת", exempt: "פטור", teacher: "מורה" };
+  const labels = { admin: "מנהל/ת", coordinator: "רכז/ת", homeroom: "מחנך/ת", counselor: "יועץ/ת", exempt: "פטור", teacher: "מורה" };
   return { key, label: labels[key], ...ROLE_STYLES[key] };
 }
 

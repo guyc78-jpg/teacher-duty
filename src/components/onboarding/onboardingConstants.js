@@ -14,6 +14,7 @@ export const ROLE_LABELS = {
   admin: "מנהל/ת מערכת",
   coordinator: "רכז/ת",
   homeroom: "מחנך/ת",
+  counselor: "יועץ/ת",
   teacher: "מורה"
 };
 
