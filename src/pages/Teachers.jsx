@@ -105,7 +105,7 @@ export default function Teachers() {
       </div>
 
       <div className="space-y-2 overflow-visible pt-1">
-        {filtered.map(t => <TeacherRow key={t.id} teacher={t} onOpen={setSelected} onDelete={isAdmin ? deleteTeacher : undefined} />)}
+        {filtered.map((t, index) => <TeacherRow key={t.id} teacher={t} number={index + 1} onOpen={setSelected} onDelete={isAdmin ? deleteTeacher : undefined} />)}
         {filtered.length === 0 && <p className="py-10 text-center text-sm text-muted-foreground">לא נמצאו מורים התואמים לסינון.</p>}
       </div>
 

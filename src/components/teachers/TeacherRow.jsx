@@ -2,7 +2,7 @@ import React from "react";
 import { ChevronLeft, Trash2 } from "lucide-react";
 import { getRoleTag } from "@/components/teachers/RoleBadge";
 
-export default function TeacherRow({ teacher, onOpen, onDelete }) {
+export default function TeacherRow({ teacher, number, onOpen, onDelete }) {
   const tag = getRoleTag(teacher);
   return (
     <div
@@ -14,7 +14,7 @@ export default function TeacherRow({ teacher, onOpen, onDelete }) {
     >
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-1.5">
-          <p className="min-w-0 truncate text-sm font-semibold leading-tight" title={teacher.full_name}>{teacher.full_name}</p>
+          <p className="min-w-0 truncate text-sm font-semibold leading-tight" title={teacher.full_name}>{number}. {teacher.full_name}</p>
           <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none ${tag.badge}`}>
             {tag.label}
           </span>
