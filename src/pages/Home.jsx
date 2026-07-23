@@ -86,7 +86,7 @@ export default function Home() {
   return (
     <div className="teacher-dashboard min-h-[calc(100vh-3rem)] space-y-4 bg-muted/30 py-3 pb-5 sm:py-4 lg:py-6">
       <div className="pt-1">
-        <h1 className="dashboard-greeting text-2xl font-extrabold tracking-tight">שלום, {teacher.full_name}</h1>
+        <h1 className="dashboard-greeting text-2xl font-extrabold tracking-tight">שלום, {teacher.full_name.trim().split(/\s+/)[0]}</h1>
         <p className="mt-0.5 text-sm text-foreground/70">{formatDateWithDay(today)}</p>
       </div>
 
