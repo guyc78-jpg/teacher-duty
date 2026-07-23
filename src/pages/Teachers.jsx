@@ -102,6 +102,7 @@ export default function Teachers() {
           onClose={() => setSelected(null)}
           onEdit={() => { setEditing(selected); setSelected(null); setShowAdd(true); }}
           onDelete={isAdmin ? () => deleteTeacher(selected) : undefined}
+          canEdit={isAdmin}
         />
       )}
       {showAdd && (

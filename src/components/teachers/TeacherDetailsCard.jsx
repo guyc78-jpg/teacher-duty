@@ -14,7 +14,7 @@ import SwapsSection from "@/components/teachers/details/SwapsSection";
 import AdminAlertsSection from "@/components/teachers/details/AdminAlertsSection";
 import TeacherScheduleSection from "@/components/teachers/TeacherScheduleSection";
 
-export default function TeacherDetailsCard({ teacher, onClose, onEdit, onDelete }) {
+export default function TeacherDetailsCard({ teacher, onClose, onEdit, onDelete, canEdit }) {
   const navigate = useNavigate();
   useEffect(() => { clearDetailsCache(); }, [teacher.id]);
   return (
@@ -54,7 +54,7 @@ export default function TeacherDetailsCard({ teacher, onClose, onEdit, onDelete 
           <UpcomingChangesSection teacher={teacher} />
           <DutyBalanceSection teacher={teacher} />
           <AvailabilitySection teacher={teacher} />
-          <TeacherScheduleSection teacherId={teacher.id} />
+          <TeacherScheduleSection teacherId={teacher.id} editable={canEdit} />
           <SwapsSection teacherId={teacher.id} />
           <AdminAlertsSection teacher={teacher} />
         </div>
