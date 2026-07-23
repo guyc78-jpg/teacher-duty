@@ -27,6 +27,7 @@ import SettingsPage from '@/pages/SettingsPage';
 import Onboarding from '@/pages/Onboarding';
 import SpecialDays from '@/pages/SpecialDays';
 import SpecialDayEditor from '@/pages/SpecialDayEditor';
+import FixedSchedule from '@/pages/FixedSchedule';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -76,6 +77,7 @@ const AuthenticatedApp = () => {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/special-days" element={<SpecialDays />} />
           <Route path="/special-days/:id" element={<SpecialDayEditor />} />
+          <Route path="/fixed-schedule" element={<FixedSchedule />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

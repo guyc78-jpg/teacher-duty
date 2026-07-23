@@ -86,6 +86,7 @@ export default function Layout() {
     { to: "/admin", label: "דשבורד", icon: BarChart3 },
     { to: "/teachers", label: "מורים", icon: Users },
     { to: "/schedule", label: "עורך שיבוצים", icon: ClipboardList },
+    { to: "/fixed-schedule", label: "לוח קבוע", icon: Calendar },
     { to: "/special-days", label: "ימים מיוחדים", icon: CalendarRange },
     { to: "/settings", label: "הגדרות", icon: Settings }
   ] : [];

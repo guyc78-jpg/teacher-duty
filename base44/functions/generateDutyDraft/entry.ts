@@ -39,14 +39,16 @@ Deno.serve(async (req) => {
     if (!start_date || !end_date) return Response.json({ error: "נדרש טווח תאריכים" }, { status: 400 });
 
     // טעינת נתונים
-    const [teachers, breaks, stations, rules, absences, calendarExceptions, allSchedules] = await Promise.all([
+    const [teachers, breaks, stations, rules, absences, calendarExceptions, allSchedules, fixedTemplates, specialDays] = await Promise.all([
       base44.asServiceRole.entities.TeacherProfile.filter({ is_active: true }),
       base44.asServiceRole.entities.Break.filter({ is_active: true }),
       base44.asServiceRole.entities.Station.filter({ is_active: true }),
       base44.asServiceRole.entities.DutyRule.filter({ is_active: true }),
       base44.asServiceRole.entities.Absence.filter({ status: "approved" }),
       base44.asServiceRole.entities.CalendarException.filter({ is_active: true }),
-      base44.asServiceRole.entities.WeeklySchedule.filter({ is_active: true })
+      base44.asServiceRole.entities.WeeklySchedule.filter({ is_active: true }),
+      base44.asServiceRole.entities.FixedDutyTemplate.list(),
+      base44.asServiceRole.entities.SpecialDay.filter({ status: "published" })
     ]);
 
     // סינון מורים לפי מצב הרצה
@@ -90,9 +92,10 @@ Deno.serve(async (req) => {
     const end = new Date(end_date);
     const schoolDates = [];
     const exceptionDates = new Set(calendarExceptions.map(e => e.date));
+    const specialReplacementDates = new Set(specialDays.filter(item => item.replace_regular_schedule !== false).map(item => item.date));
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const dateStr = toISODate(d);
-      if (isSchoolDate(dateStr) && !exceptionDates.has(dateStr)) {
+      if (isSchoolDate(dateStr) && !exceptionDates.has(dateStr) && !specialReplacementDates.has(dateStr)) {
         schoolDates.push(dateStr);
       }
     }
@@ -111,6 +114,7 @@ Deno.serve(async (req) => {
     };
 
     const sortedBreaks = breaks.sort((a, b) => BREAK_ORDER[a.break_type] - BREAK_ORDER[b.break_type]);
+    const fixedAssignments = fixedTemplates[0]?.published_assignments || [];
 
     for (const dateStr of schoolDates) {
       const dow = new Date(dateStr).getDay();
@@ -124,8 +128,10 @@ Deno.serve(async (req) => {
 
         for (const station of activeStations) {
           const req = station.staffing_requirements?.[brk.break_type] || 1;
+          const fixedSlot = fixedAssignments.find(item => item.day_of_week === dow && item.break_type === brk.break_type && item.station_id === station.id);
           for (let slot = 0; slot < req; slot++) {
-            // חיפוש מורה מתאים
+            // תבנית קבועה שפורסמה היא הבסיס; בהיעדרה מופעל מנגנון האיזון הרגיל
+            const preferredTeacherId = fixedSlot ? fixedSlot.teacher_ids?.[slot] || "__missing__" : null;
             const candidate = findBestCandidate({
               teachers: eligibleTeachers,
               schedules: allSchedules,
@@ -137,7 +143,8 @@ Deno.serve(async (req) => {
               brk,
               station,
               fairnessTracker,
-              assignments
+              assignments,
+              preferredTeacherId
             });
 
             if (candidate) {
@@ -153,7 +160,7 @@ Deno.serve(async (req) => {
                 station_name: station.name,
                 teacher_id: candidate.id,
                 teacher_name: candidate.full_name,
-                source: "auto",
+                source: fixedSlot ? "manual" : "auto",
                 status: "scheduled",
                 plan_status: "draft"
               });
@@ -207,7 +214,7 @@ Deno.serve(async (req) => {
   }
 });
 
-function findBestCandidate({ teachers, schedules, absences, rules, weekKey, dateStr, dow, brk, station, fairnessTracker, assignments }) {
+function findBestCandidate({ teachers, schedules, absences, rules, weekKey, dateStr, dow, brk, station, fairnessTracker, assignments, preferredTeacherId = null }) {
   // סינון מועמדים
   let candidates = teachers.filter(t => {
     // עמדות מותרות
@@ -228,6 +235,7 @@ function findBestCandidate({ teachers, schedules, absences, rules, weekKey, date
   });
 
   if (candidates.length === 0) return null;
+  if (preferredTeacherId) return candidates.find(teacher => teacher.id === preferredTeacherId) || null;
 
   // העדפת מורי ספורט לעמדות ספורט
   if (station.is_sport_station) {

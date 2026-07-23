@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
-const defaults = { school_name: "", morning_reminder_time: "08:00", pre_duty_reminder_minutes: 10, missing_arrival_threshold_minutes: 5, security_coordinator_phone: "", school_contact_phone: "", pilot_mode_enabled: false };
+const defaults = { school_name: "", morning_reminder_time: "08:00", pre_duty_reminder_minutes: 10, missing_arrival_threshold_minutes: 5, security_coordinator_phone: "", school_contact_phone: "", pilot_mode_enabled: false, fixed_quota_policy: "warning" };
 const fields = Object.keys(defaults);
 const comparable = value => JSON.stringify(Object.fromEntries(fields.map(key => [key, value?.[key] ?? defaults[key]])));
 
@@ -56,6 +56,7 @@ export default function GeneralSettings() {
         <div className="min-w-0"><Label htmlFor="security-phone">טלפון רכז ביטחון</Label><Input id="security-phone" dir="ltr" value={settings.security_coordinator_phone} onChange={event => set("security_coordinator_phone", event.target.value)} /></div>
         <div className="min-w-0"><Label htmlFor="school-phone">טלפון בית הספר</Label><Input id="school-phone" dir="ltr" value={settings.school_contact_phone} onChange={event => set("school_contact_phone", event.target.value)} /></div>
       </div>
+      <div className="min-w-0"><Label htmlFor="quota-policy">חריגות מכסה בלוח קבוע</Label><select id="quota-policy" value={settings.fixed_quota_policy} onChange={event => set("fixed_quota_policy", event.target.value)} className="h-10 w-full rounded-md border bg-background px-3 text-sm"><option value="warning">אזהרה בלבד</option><option value="block">חסימה בפרסום</option></select></div>
       <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-3">
         <div className="min-w-0"><Label htmlFor="pilot-mode" className="text-sm font-semibold">מצב הרצה</Label><p className="mt-1 text-xs leading-5 text-muted-foreground">מגביל את הפעלת המערכת למורי ההרצה שהוגדרו מראש.</p></div>
         <Switch id="pilot-mode" checked={settings.pilot_mode_enabled} aria-checked={settings.pilot_mode_enabled} aria-label="מצב הרצה" onCheckedChange={value => set("pilot_mode_enabled", value)} />

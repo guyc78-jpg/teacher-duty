@@ -1,0 +1,10 @@
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import CloseButton from "@/components/ui/close-button";
+
+export default function FixedPublishDialog({ validation, busy, onClose, onPublish }) {
+  const [reason, setReason] = useState(""), summary = validation.summary || {};
+  return <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"><button aria-label="סגירה" className="absolute inset-0 bg-foreground/40" onClick={onClose} /><div className="relative w-full rounded-t-2xl bg-background p-5 sm:max-w-lg sm:rounded-2xl"><div className="flex items-center justify-between"><h2 className="text-lg font-bold">סיכום לפני פרסום</h2><CloseButton onClick={onClose} /></div><div className="mt-4 grid grid-cols-2 gap-2 text-sm"><Summary label="עמדות חסרות" value={summary.missing_stations} /><Summary label="מורים מתחת למכסה" value={summary.teachers_under_quota} /><Summary label="מורים מעל המכסה" value={summary.teachers_over_quota} /><Summary label="התנגשויות" value={summary.conflicts} /></div>{validation.warnings?.length > 0 && <Input className="mt-4" value={reason} onChange={e => setReason(e.target.value)} placeholder="סיבה לפרסום עם התרעות" />}{validation.errors?.length > 0 && <p className="mt-3 text-sm text-destructive">יש לתקן את החסרים וההתנגשויות לפני פרסום.</p>}<div className="mt-4 grid grid-cols-2 gap-2"><Button variant="outline" onClick={onClose}>ביטול</Button><Button disabled={busy || validation.errors?.length > 0 || (validation.warnings?.length > 0 && !reason.trim())} onClick={() => onPublish(reason)}>פרסם לוח קבוע</Button></div></div></div>;
+}
+function Summary({ label, value = 0 }) { return <div className="rounded-xl border bg-card p-3"><p className="text-muted-foreground">{label}</p><p className="mt-1 text-2xl font-bold">{value}</p></div>; }
