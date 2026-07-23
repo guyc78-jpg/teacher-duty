@@ -27,6 +27,11 @@ function subjectKey(value) {
   return normalizeSubjectName(value).toLocaleLowerCase("he");
 }
 
+function splitTeacherName(fullName) {
+  const [lastName = "", ...firstNameParts] = (fullName || "").trim().split(/\s+/).filter(Boolean);
+  return { lastName, firstName: firstNameParts.join(" ") };
+}
+
 export default function Teachers() {
   const [teacher, setTeacher] = useState(null);
   const [teachers, setTeachers] = useState([]);
@@ -126,6 +131,9 @@ export default function Teachers() {
 }
 
 function TeacherModal({ teacher: edit, onClose, onSaved }) {
+  const initialName = splitTeacherName(edit?.full_name);
+  const [lastName, setLastName] = useState(initialName.lastName);
+  const [firstName, setFirstName] = useState(initialName.firstName);
   const [form, setForm] = useState(edit || {
     full_name: "", email: "", employee_id: "", division: "high", subject: "", role: "teacher",
     is_homeroom: false, is_sport_teacher: false, weekly_teaching_hours: 0, is_active: true, is_exempt: false
@@ -133,13 +141,15 @@ function TeacherModal({ teacher: edit, onClose, onSaved }) {
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
-    if (!form.full_name || !form.email || !form.employee_id) { alert("נא למלא שם, דוא״ל ומזהה עובד"); return; }
+    const fullName = `${lastName.trim()} ${firstName.trim()}`.replace(/\s+/g, " ");
+    if (!lastName.trim() || !firstName.trim() || !form.email || !form.employee_id) { alert("נא למלא שם משפחה, שם פרטי, דוא״ל ומזהה עובד"); return; }
+    const payload = { ...form, full_name: fullName };
     setSaving(true);
     try {
       if (edit) {
-        await manageTeacherProfile({ action: "update", teacher_id: edit.id, data: form });
+        await manageTeacherProfile({ action: "update", teacher_id: edit.id, data: payload });
       } else {
-        await base44.entities.TeacherProfile.create(form);
+        await base44.entities.TeacherProfile.create(payload);
       }
       onSaved();
     } catch (err) { alert("שגיאה: " + (err.message || "")); }
@@ -159,13 +169,17 @@ function TeacherModal({ teacher: edit, onClose, onSaved }) {
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>שם מלא *</Label>
-              <Input value={form.full_name} onChange={e => set("full_name", e.target.value)} />
+              <Label>שם משפחה *</Label>
+              <Input aria-label="שם משפחה" value={lastName} onChange={e => setLastName(e.target.value)} />
             </div>
             <div>
-              <Label>מזהה עובד *</Label>
-              <Input value={form.employee_id} onChange={e => set("employee_id", e.target.value)} />
+              <Label>שם פרטי *</Label>
+              <Input aria-label="שם פרטי" value={firstName} onChange={e => setFirstName(e.target.value)} />
             </div>
+          </div>
+          <div>
+            <Label>מזהה עובד *</Label>
+            <Input value={form.employee_id} onChange={e => set("employee_id", e.target.value)} />
           </div>
           <div>
             <Label>דוא״ל *</Label>
