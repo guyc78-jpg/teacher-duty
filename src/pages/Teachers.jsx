@@ -88,10 +88,7 @@ export default function Teachers() {
         <TeacherFilters filters={filters} onChange={setFilters} subjects={subjects} />
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
-        <div className="grid grid-cols-[minmax(0,1fr)_minmax(5rem,0.7fr)_4rem_auto] gap-2 border-b border-border bg-muted/50 px-3 py-2 text-xs font-medium text-muted-foreground sm:grid-cols-[minmax(0,1.3fr)_minmax(7rem,1fr)_6rem_5rem_auto]">
-          <span>שם</span><span>מקצוע</span><span>שעות</span><span>סטטוס</span><span className="hidden sm:block" />
-        </div>
+      <div className="space-y-2">
         {filtered.map(t => <TeacherRow key={t.id} teacher={t} onOpen={setSelected} onDelete={isAdmin ? deleteTeacher : undefined} />)}
         {filtered.length === 0 && <p className="py-10 text-center text-sm text-muted-foreground">לא נמצאו מורים התואמים לסינון.</p>}
       </div>
