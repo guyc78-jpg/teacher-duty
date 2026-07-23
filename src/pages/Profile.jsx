@@ -49,7 +49,7 @@ export default function Profile() {
           pendingRequest={pendingRequest}
           editing={editing}
           setEditing={setEditing}
-          onSubmitted={() => { setEditing(false); setMessage(teacher.role === "admin" ? "הפרופיל עודכן בהצלחה." : "הבקשה נשלחה לאישור מנהל המערכת."); load(); }}
+          onSubmitted={() => { setEditing(false); setMessage(teacher.role === "admin" ? "הפרופיל עודכן בהצלחה." : "הבקשה נשלחה לאישור מנהל/ת המערכת."); load(); }}
         />
       )}
       {activeTab === "notifications" && <NotificationPreferences teacher={teacher} />}

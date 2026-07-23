@@ -11,9 +11,9 @@ export const WEEK_DAYS = [
 
 export const ROLE_LABELS = {
   management: "הנהלה",
-  admin: "מנהל מערכת",
-  coordinator: "רכז",
-  homeroom: "מחנך",
+  admin: "מנהל/ת מערכת",
+  coordinator: "רכז/ת",
+  homeroom: "מחנך/ת",
   teacher: "מורה"
 };
 
@@ -43,7 +43,7 @@ export const CHANGE_LABELS = {
   subject: "מקצוע ראשי",
   additional_subjects: "מקצועות נוספים",
   is_sport_teacher: "מורה לספורט",
-  is_homeroom: "מחנך",
+  is_homeroom: "מחנך/ת",
   homeroom_grade: "שכבה",
   homeroom_class: "כיתה",
   days_off: "ימי חופש",
@@ -59,7 +59,7 @@ export function formatChangeValue(key, val) {
 
 export const EXEMPTION_STATUS_LABELS = {
   none: null,
-  pending: { label: "פטור ממתין לאימות מנהל", class: "status-warning" },
+  pending: { label: "פטור ממתין לאימות מנהל/ת", class: "status-warning" },
   approved: { label: "פטור מאושר", class: "status-success" },
   rejected: { label: "בקשת פטור נדחתה", class: "status-danger" }
 };

@@ -63,7 +63,7 @@ export default function PendingApprovals({ onChanged }) {
     <div className="rounded-xl border border-warning/40 bg-warning/5 p-4 space-y-3">
       <h2 className="font-bold flex items-center gap-2 text-sm">
         <ClipboardCheck className="w-4 h-4 text-warning" />
-        ממתינים לאישור מנהל ({requests.length + exemptions.length})
+        ממתינים לאישור מנהל/ת ({requests.length + exemptions.length})
       </h2>
 
       {exemptions.map(t => (

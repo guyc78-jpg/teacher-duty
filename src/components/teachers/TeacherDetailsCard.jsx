@@ -5,7 +5,7 @@ import CloseButton from "@/components/ui/close-button";
 import { DIVISION_LABELS } from "@/lib/dutyUtils";
 import TeacherScheduleSection from "@/components/teachers/TeacherScheduleSection";
 
-const roleLabels = { management: "הנהלה", admin: "מנהל מערכת", coordinator: "רכז", teacher: "מורה", homeroom: "מחנך" };
+const roleLabels = { management: "הנהלה", admin: "מנהל/ת מערכת", coordinator: "רכז/ת", teacher: "מורה", homeroom: "מחנך/ת" };
 
 export default function TeacherDetailsCard({ teacher, onClose, onEdit, onDelete }) {
   const details = [

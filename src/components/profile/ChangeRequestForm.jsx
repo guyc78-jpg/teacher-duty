@@ -49,9 +49,9 @@ export default function ChangeRequestForm({ teacher, onSubmitted, onCancel, dire
       <StepHomeroom form={form} set={set} />
       <StepDaysOff form={form} set={set} teacher={teacher} />
       {error && <p className="text-sm rounded-lg p-3 border status-danger">{error}</p>}
-      {!directSave && <p className="text-xs text-muted-foreground">השינויים ייכנסו לתוקף וישפיעו על השיבוץ רק לאחר אישור מנהל המערכת.</p>}
+      {!directSave && <p className="text-xs text-muted-foreground">השינויים ייכנסו לתוקף וישפיעו על השיבוץ רק לאחר אישור מנהל/ת המערכת.</p>}
       <div className="flex gap-2">
-        <Button className="flex-1 h-11" onClick={submit} disabled={saving}>{saving ? "שומר..." : directSave ? "שמירה" : "שלח לאישור מנהל"}</Button>
+        <Button className="flex-1 h-11" onClick={submit} disabled={saving}>{saving ? "שומר..." : directSave ? "שמירה" : "שלח לאישור מנהל/ת"}</Button>
         <Button variant="outline" className="h-11" onClick={onCancel} disabled={saving}>ביטול</Button>
       </div>
     </div>

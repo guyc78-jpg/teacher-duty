@@ -55,7 +55,7 @@ export default function Layout() {
         <div className="text-center max-w-md">
           <ShieldCheck className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
           <h2 className="text-xl font-bold mb-2">פרופיל מורה לא נמצא</h2>
-          <p className="text-muted-foreground mb-6">לחשבון שלך לא מוגדר פרופיל מורה. פנה למנהל המערכת להשלמת ההרשמה.</p>
+          <p className="text-muted-foreground mb-6">לחשבון שלך לא מוגדר פרופיל מורה. פנה למנהל/ת המערכת להשלמת ההרשמה.</p>
         </div>
       </div>
     );

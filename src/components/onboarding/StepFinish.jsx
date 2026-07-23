@@ -19,7 +19,7 @@ export default function StepFinish({ form, set, teacher, pushStatus, requestPush
     ["מורה לספורט", form.is_sport_teacher ? "כן" : "לא"],
     ["מחנך/ת", form.is_homeroom ? `כן · ${form.homeroom_grade}׳${form.homeroom_class} ` : "לא"],
     ["ימי חופש", form.days_off.map(d => WEEK_DAYS.find(w => w.value === d)?.label).join(", ") || "ללא"],
-    ["פטור מתורנות", teacher?.is_exempt ? "מאושר" : form.request_exemption ? "ממתין לאימות מנהל" : "לא"]
+    ["פטור מתורנות", teacher?.is_exempt ? "מאושר" : form.request_exemption ? "ממתין לאימות מנהל/ת" : "לא"]
   ];
 
   return (

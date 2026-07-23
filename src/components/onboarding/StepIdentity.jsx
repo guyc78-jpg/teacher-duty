@@ -28,7 +28,7 @@ export default function StepIdentity({ form, set, teacher }) {
       <div>
         <Label>תפקיד</Label>
         <div className="h-11 mt-1 rounded-lg border border-border bg-muted/50 px-3 flex items-center text-sm text-muted-foreground">
-          {ROLE_LABELS[teacher?.role] || "מורה"} · נקבע ע״י מנהל המערכת
+          {ROLE_LABELS[teacher?.role] || "מורה"} · נקבע ע״י מנהל/ת המערכת
         </div>
       </div>
     </div>

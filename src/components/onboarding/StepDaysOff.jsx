@@ -28,7 +28,7 @@ export default function StepDaysOff({ form, set, teacher }) {
           <YesNo label="האם קיים לך פטור מתורנות?" value={form.request_exemption} onChange={v => set("request_exemption", v)} />
           {form.request_exemption && (
             <p className="text-sm rounded-lg p-3 border status-warning">
-              הבקשה תסומן כ„ממתינה לאימות מנהל”. עד לאישור המנהל, הפטור לא יוחל בשיבוץ.
+              הבקשה תסומן כ„ממתינה לאימות מנהל/ת”. עד לאישור המנהל/ת, הפטור לא יוחל בשיבוץ.
             </p>
           )}
         </>

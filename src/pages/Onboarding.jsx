@@ -104,7 +104,7 @@ export default function Onboarding() {
 
   if (!teacher) return (
     <div className="min-h-screen flex items-center justify-center p-6 text-center">
-      <p className="text-muted-foreground">לחשבון שלך לא מוגדר פרופיל מורה. פנה למנהל המערכת.</p>
+      <p className="text-muted-foreground">לחשבון שלך לא מוגדר פרופיל מורה. פנה למנהל/ת המערכת.</p>
     </div>
   );
 
@@ -113,7 +113,7 @@ export default function Onboarding() {
       <div className="text-center max-w-sm space-y-4">
         <CheckCircle2 className="w-14 h-14 mx-auto text-success" />
         <h1 className="text-xl font-bold">הקליטה הושלמה בהצלחה!</h1>
-        <p className="text-sm text-muted-foreground">הפרטים נשמרו בפרופיל שלך וחוברו למנוע השיבוץ.{form.request_exemption && !teacher.is_exempt ? " בקשת הפטור ממתינה לאימות מנהל." : ""}</p>
+        <p className="text-sm text-muted-foreground">הפרטים נשמרו בפרופיל שלך וחוברו למנוע השיבוץ.{form.request_exemption && !teacher.is_exempt ? " בקשת הפטור ממתינה לאימות מנהל/ת." : ""}</p>
         <Button className="w-full h-11" onClick={() => navigate("/", { replace: true })}>מעבר למערכת</Button>
       </div>
     </div>

@@ -167,9 +167,9 @@ function TeacherModal({ teacher: edit, onClose, onSaved }) {
               <Label>תפקיד</Label>
               <select value={form.role} onChange={e => set("role", e.target.value)} className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm">
                 <option value="teacher">מורה</option>
-                <option value="homeroom">מחנך</option>
-                <option value="coordinator">רכז</option>
-                <option value="admin">מנהל מערכת</option>
+                <option value="homeroom">מחנך/ת</option>
+                <option value="coordinator">רכז/ת</option>
+                <option value="admin">מנהל/ת מערכת</option>
                 <option value="management">הנהלה</option>
               </select>
             </div>
@@ -185,7 +185,7 @@ function TeacherModal({ teacher: edit, onClose, onSaved }) {
             </div>
           </div>
           <div className="flex gap-4 flex-wrap">
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_homeroom} onChange={e => set("is_homeroom", e.target.checked)} /> מחנך</label>
+            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_homeroom} onChange={e => set("is_homeroom", e.target.checked)} /> מחנך/ת</label>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_sport_teacher} onChange={e => set("is_sport_teacher", e.target.checked)} /> מורה לספורט</label>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_exempt} onChange={e => set("is_exempt", e.target.checked)} /> פטור מתורנות</label>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_active} onChange={e => set("is_active", e.target.checked)} /> פעיל</label>

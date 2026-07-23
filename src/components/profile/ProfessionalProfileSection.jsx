@@ -23,7 +23,7 @@ export default function ProfessionalProfileSection({ teacher, pendingRequest, ed
       </div>
       {pendingRequest && (
         <div className="my-3 rounded-lg border p-3 text-sm status-warning">
-          <p className="flex items-center gap-1 font-medium"><Clock className="h-4 w-4" />בקשת שינוי ממתינה לאישור מנהל</p>
+          <p className="flex items-center gap-1 font-medium"><Clock className="h-4 w-4" />בקשת שינוי ממתינה לאישור מנהל/ת</p>
           {Object.entries(JSON.parse(pendingRequest.changes || "{}")).map(([key, value]) => <p key={key} className="mt-1 text-xs">{CHANGE_LABELS[key] || key}: {formatChangeValue(key, value)}</p>)}
         </div>
       )}
@@ -33,7 +33,7 @@ export default function ProfessionalProfileSection({ teacher, pendingRequest, ed
             {rows.map(([label, value]) => <div key={label} className="flex min-h-11 items-center justify-between gap-4 py-2 text-sm"><span className="shrink-0 text-muted-foreground">{label}</span><span className="min-w-0 text-left font-medium">{value}</span></div>)}
             <div className="flex min-h-11 items-center justify-between gap-4 py-2 text-sm"><span className="text-muted-foreground">פטור מתורנות</span>{exemption ? <span className={`rounded border px-1.5 py-0.5 text-xs ${exemption.class}`}>{exemption.label}</span> : <span className="font-medium">לא</span>}</div>
           </div>
-          {!isAdmin && <p className="border-t border-border py-3 text-xs text-muted-foreground">שינוי מקצוע, חינוך, ימי חופש או פטור ייכנס לתוקף רק לאחר אישור מנהל.</p>}
+          {!isAdmin && <p className="border-t border-border py-3 text-xs text-muted-foreground">שינוי מקצוע, חינוך, ימי חופש או פטור ייכנס לתוקף רק לאחר אישור מנהל/ת.</p>}
         </>
       )}
     </section>
