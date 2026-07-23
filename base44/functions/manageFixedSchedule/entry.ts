@@ -11,25 +11,31 @@ Deno.serve(async req => {
   try {
     const base44 = createClientFromRequest(req), user = await base44.auth.me();
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
-    const profiles = await base44.asServiceRole.entities.TeacherProfile.filter({ user_id: user.id }), actor = profiles[0];
-    if (!actor || actor.role !== "admin") return Response.json({ error: "נדרשת הרשאת מנהל/ת מערכת" }, { status: 403 });
     const body = await req.json(), e = base44.asServiceRole.entities;
-    const [templates, teachers, stations, breaks, schedules, absences, rules, settings] = await Promise.all([
-      e.FixedDutyTemplate.list(), e.TeacherProfile.filter({ is_active: true }), e.Station.filter({ is_active: true }), e.Break.filter({ is_active: true }), e.WeeklySchedule.filter({ is_active: true }), e.Absence.filter({ status: "approved" }), e.DutyRule.filter({ is_active: true }), e.SystemSettings.list()
-    ]);
+    const [profiles, templates] = await Promise.all([e.TeacherProfile.filter({ user_id: user.id }, "-updated_date", 1), e.FixedDutyTemplate.list("-updated_date", 1)]), actor = profiles[0];
+    if (!actor || actor.role !== "admin") return Response.json({ error: "נדרשת הרשאת מנהל/ת מערכת" }, { status: 403 });
     let template = templates[0];
     if (!template) template = await e.FixedDutyTemplate.create({ name: "לוח תורנויות קבוע", status: "draft", version: 1, assignments: [], published_assignments: [] });
-    const data = { teachers, stations, breaks, schedules, absences, rules, assignments: template.assignments || [] };
-    const quotaPolicy = settings[0]?.fixed_quota_policy || "warning";
-    if (body.action === "load") return Response.json(pack(template, data, quotaPolicy));
-    if (body.expected_updated_date && body.expected_updated_date !== template.updated_date) return Response.json({ error: "הלוח השתנה במקביל. יש לרענן ולנסות שוב.", code: "concurrent_change" }, { status: 409 });
-    if (body.action === "candidates") {
-      const slot = makeSlot(body, stations, breaks), list = teachers.map(teacher => candidate(teacher, slot, data, keyOf(slot))).sort((a, b) => Number(b.available) - Number(a.available) || b.score - a.score || a.full_name.localeCompare(b.full_name, "he"));
-      return Response.json({ candidates: list, required: slot.required, slot });
+    if (body.action === "load") {
+      const [stations, breaks, settings] = await Promise.all([e.Station.filter({ is_active: true }, "sort_order", 100), e.Break.filter({ is_active: true }, "sort_order", 25), e.SystemSettings.list("-updated_date", 1)]);
+      const { published_assignments: ignoredPublished, ...templateView } = template;
+      return Response.json({ template: templateView, stations: stations.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)), breaks: breaks.sort((a, b) => mins(a.start_time) - mins(b.start_time)), quota_policy: settings[0]?.fixed_quota_policy || "warning" });
     }
-    let assignments = [...(template.assignments || [])], overrideReason = (body.override_reason || "").trim();
+    if (body.action === "candidates") {
+      const query = String(body.query || "").trim(), selectedIds = unique(body.selected_ids), teacherFilter = query ? { is_active: true, $or: [{ full_name: { $regex: query, $options: "i" } }, { subject: { $regex: query, $options: "i" } }] } : { is_active: true };
+      const [matched, selectedProfiles, stations, breaks, rules] = await Promise.all([e.TeacherProfile.filter(teacherFilter, "full_name", query ? 25 : 75), selectedIds.length ? e.TeacherProfile.filter({ id: { $in: selectedIds } }, "full_name", 25) : Promise.resolve([]), e.Station.filter({ id: body.station_id, is_active: true }, "sort_order", 1), e.Break.filter({ break_type: body.break_type, is_active: true }, "sort_order", 10), e.DutyRule.filter({ is_active: true }, "sort_order", 25)]);
+      const teachers = [...selectedProfiles, ...matched].filter((item, index, list) => list.findIndex(other => other.id === item.id) === index).slice(0, 25), teacherIds = teachers.map(item => item.id);
+      const [schedules, absences] = await Promise.all([teacherIds.length ? e.WeeklySchedule.filter({ is_active: true, teacher_id: { $in: teacherIds }, day_of_week: Number(body.day_of_week) }, "start_time", 250) : Promise.resolve([]), teacherIds.length ? e.Absence.filter({ status: "approved", teacher_id: { $in: teacherIds } }, "-start_date", 250) : Promise.resolve([])]);
+      const slot = makeSlot(body, stations, breaks), data = { teachers, stations, breaks, schedules, absences, rules, assignments: template.assignments || [] };
+      const list = teachers.map(teacher => candidate(teacher, slot, data, keyOf(slot))).sort((a, b) => Number(b.available) - Number(a.available) || b.score - a.score || a.full_name.localeCompare(b.full_name, "he")).slice(0, 25);
+      return Response.json({ candidates: list, required: slot.required });
+    }
+    const [teachers, stations, breaks, schedules, absences, rules, settings] = await Promise.all([e.TeacherProfile.filter({ is_active: true }, "full_name", 500), e.Station.filter({ is_active: true }, "sort_order", 100), e.Break.filter({ is_active: true }, "sort_order", 25), e.WeeklySchedule.filter({ is_active: true }, "start_time", 1000), e.Absence.filter({ status: "approved" }, "-start_date", 500), e.DutyRule.filter({ is_active: true }, "sort_order", 25), e.SystemSettings.list("-updated_date", 1)]);
+    const data = { teachers, stations, breaks, schedules, absences, rules, assignments: template.assignments || [] }, quotaPolicy = settings[0]?.fixed_quota_policy || "warning";
+    if (body.expected_updated_date && body.expected_updated_date !== template.updated_date) return Response.json({ error: "הלוח השתנה במקביל. יש לרענן ולנסות שוב.", code: "concurrent_change" }, { status: 409 });
+    let assignments = [...(template.assignments || [])], overrideReason = (body.override_reason || "").trim(), changedSlot = null;
     if (body.action === "save_slot") {
-      const slot = makeSlot(body, stations, breaks), teacherIds = unique(body.teacher_ids);
+      const slot = makeSlot(body, stations, breaks), teacherIds = unique(body.teacher_ids); changedSlot = slot;
       if (teacherIds.length > slot.required) return Response.json({ error: `ניתן לבחור עד ${slot.required} מורים` }, { status: 422 });
       const checks = teacherIds.map(id => candidate(teachers.find(t => t.id === id), slot, { ...data, assignments }, keyOf(slot)));
       const hard = checks.flatMap(item => item.reasons); if (hard.length) return Response.json({ error: hard.join(" · "), hard_conflict: true }, { status: 422 });
@@ -53,6 +59,10 @@ Deno.serve(async req => {
     } else if (body.action !== "save_draft") return Response.json({ error: "פעולה לא מוכרת" }, { status: 400 });
     template = await e.FixedDutyTemplate.update(template.id, { status: "draft", version: (template.version || 1) + 1, assignments, last_override_reason: overrideReason });
     await audit(e, user, actor, template.id, body.action, { day: body.day_of_week, target: body.target_day });
+    if (body.action === "save_slot") {
+      const { assignments: ignoredAssignments, published_assignments: ignoredPublished, ...templateMeta } = template;
+      return Response.json({ template: templateMeta, assignment: assignments.find(item => keyOf(item) === keyOf(changedSlot)) || null, slot_key: { day_of_week: changedSlot.day_of_week, break_type: changedSlot.break_type, station_id: changedSlot.station_id } });
+    }
     return Response.json(pack(template, { ...data, assignments }, quotaPolicy));
   } catch (error) { return Response.json({ error: error.message }, { status: 500 }); }
 });

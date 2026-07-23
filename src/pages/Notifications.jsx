@@ -23,21 +23,26 @@ export default function Notifications() {
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => {
-    const unsub = base44.entities.Notification.subscribe(() => load());
+    if (!teacher) return;
+    const unsub = base44.entities.Notification.subscribe(event => {
+      if (event.data?.user_id !== teacher.user_id) return;
+      setNotifications(current => {
+        if (event.type === "delete") return current.filter(item => item.id !== event.id);
+        const without = current.filter(item => item.id !== event.id);
+        return [event.data, ...without].sort((a, b) => (b.created_at || "").localeCompare(a.created_at || "")).slice(0, 100);
+      });
+    });
     return unsub;
-  }, [load]);
+  }, [teacher?.user_id]);
 
   const markRead = async (id) => {
     await base44.entities.Notification.update(id, { is_read: true });
-    await load();
+    setNotifications(current => current.map(item => item.id === id ? { ...item, is_read: true } : item));
   };
 
   const markAllRead = async () => {
-    const unread = notifications.filter(n => !n.is_read);
-    for (const n of unread) {
-      await base44.entities.Notification.update(n.id, { is_read: true });
-    }
-    await load();
+    await base44.entities.Notification.updateMany({ user_id: teacher.user_id, is_read: false }, { $set: { is_read: true } });
+    setNotifications(current => current.map(item => ({ ...item, is_read: true })));
   };
 
   const handleClick = async (n) => {

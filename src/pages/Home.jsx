@@ -20,6 +20,7 @@ export default function Home() {
   const [teacher, setTeacher] = useState(null);
   const [assignments, setAssignments] = useState([]);
   const [specialAssignments, setSpecialAssignments] = useState([]);
+  const [replacementDates, setReplacementDates] = useState(() => new Set());
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(null);
   const [currentTime, setCurrentTime] = useState(Date.now());
@@ -32,9 +33,9 @@ export default function Home() {
         base44.entities.Assignment.filter({ teacher_id: t.id, plan_status: "published" }, "date", 100),
         manageSpecialDay({ action: "my_assignments" })
       ]);
-      const special = specialResult.data.assignments || [], replacementDates = new Set((specialResult.data.days || []).filter(d => d.replace_regular_schedule).map(d => d.date));
-      const sorted = all.filter(a => isSchoolDay(a.date) && !replacementDates.has(a.date)).sort((a, b) => a.date.localeCompare(b.date));
-      setAssignments(sorted); setSpecialAssignments(special.sort((a, b) => `${a.date}${a.start_time}`.localeCompare(`${b.date}${b.start_time}`)));
+      const special = specialResult.data.assignments || [], hiddenDates = new Set((specialResult.data.days || []).filter(d => d.replace_regular_schedule).map(d => d.date));
+      const sorted = all.filter(a => isSchoolDay(a.date) && !hiddenDates.has(a.date)).sort((a, b) => a.date.localeCompare(b.date));
+      setReplacementDates(hiddenDates); setAssignments(sorted); setSpecialAssignments(special.sort((a, b) => `${a.date}${a.start_time}`.localeCompare(`${b.date}${b.start_time}`)));
     }
     setLoading(false);
   }, []);
@@ -47,9 +48,19 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const unsub = base44.entities.Assignment.subscribe(() => load());
+    if (!teacher) return;
+    const unsub = base44.entities.Assignment.subscribe(event => {
+      if (event.data?.teacher_id !== teacher.id) return;
+      setAssignments(current => {
+        if (event.type === "delete") return current.filter(item => item.id !== event.id);
+        const next = event.data;
+        const without = current.filter(item => item.id !== event.id);
+        if (next.plan_status !== "published" || !isSchoolDay(next.date) || replacementDates.has(next.date)) return without;
+        return [...without, next].sort((a, b) => a.date.localeCompare(b.date));
+      });
+    });
     return unsub;
-  }, [load]);
+  }, [teacher?.id, replacementDates]);
 
   const today = todayISO();
   const todayDuties = assignments.filter(a => a.date === today);
@@ -74,7 +85,7 @@ export default function Home() {
         station_name: assignment.station_name
       });
       await base44.entities.Assignment.update(assignment.id, { status: "confirmed" });
-      await load();
+      setAssignments(current => current.map(item => item.id === assignment.id ? { ...item, status: "confirmed" } : item));
     } catch (err) {
       alert("שגיאה באישור ההגעה: " + (err.message || ""));
     } finally {

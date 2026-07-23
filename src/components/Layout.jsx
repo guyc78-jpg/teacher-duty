@@ -7,6 +7,7 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 import CloseButton from "@/components/ui/close-button";
 import PushToggle from "@/components/PushToggle";
 import { ROLE_LABELS } from "@/components/onboarding/onboardingConstants";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function Layout() {
   const [teacher, setTeacher] = useState(null);
@@ -15,15 +16,16 @@ export default function Layout() {
   const [dark, setDark] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
     (async () => {
-      const t = await getCurrentTeacher();
+      const t = await getCurrentTeacher(user);
       setTeacher(t);
       setLoading(false);
       if (t) {
         try {
-          const notifs = await base44.entities.Notification.filter({ user_id: t.user_id, is_read: false });
+          const notifs = await base44.entities.Notification.filter({ user_id: t.user_id, is_read: false }, "-created_date", 100);
           setUnreadCount(notifs.length);
         } catch {}
       }

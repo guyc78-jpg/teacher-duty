@@ -27,8 +27,7 @@ Deno.serve(async req => {
       if (!actor) return Response.json({ assignments: [] });
       const assignments = await e.SpecialAssignment.filter({ teacher_id: actor.id, plan_status: "published" }, "date", 200);
       const dayIds = [...new Set(assignments.map(a => a.special_day_id))];
-      const days = [];
-      for (const id of dayIds) { const day = await e.SpecialDay.get(id); if (day?.status === "published") days.push(day); }
+      const days = dayIds.length ? await e.SpecialDay.filter({ id: { $in: dayIds }, status: "published" }, "-date", 200) : [];
       return Response.json({ assignments, days });
     }
     if (!isAdmin) return Response.json({ error: "Forbidden — נדרשת הרשאת מנהל/ת מערכת" }, { status: 403 });

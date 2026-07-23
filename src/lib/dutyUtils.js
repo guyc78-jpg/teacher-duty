@@ -155,15 +155,27 @@ export function durationMinutes(start, end) {
   return timeToMinutes(end) - timeToMinutes(start);
 }
 
-// טעינת המורה המחובר
-export async function getCurrentTeacher() {
-  try {
-    const me = await base44.auth.me();
-    const profiles = await base44.entities.TeacherProfile.filter({ user_id: me.id });
-    return profiles[0] || null;
-  } catch {
-    return null;
-  }
+// טעינת המורה המחובר — Cache משותף מונע קריאות כפולות בכל מעבר מסך
+let teacherCache = null;
+let teacherPromise = null;
+let teacherCacheUntil = 0;
+export async function getCurrentTeacher(currentUser = null) {
+  if (teacherCacheUntil > Date.now()) return teacherCache;
+  if (teacherPromise) return teacherPromise;
+  teacherPromise = (async () => {
+    try {
+      const me = currentUser || await base44.auth.me();
+      const profiles = await base44.entities.TeacherProfile.filter({ user_id: me.id }, "-updated_date", 1);
+      teacherCache = profiles[0] || null;
+      teacherCacheUntil = Date.now() + 5 * 60 * 1000;
+      return teacherCache;
+    } catch {
+      return null;
+    } finally {
+      teacherPromise = null;
+    }
+  })();
+  return teacherPromise;
 }
 
 export function isAdmin(teacher) {
