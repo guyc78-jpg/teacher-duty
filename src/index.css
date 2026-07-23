@@ -123,6 +123,11 @@
   from { transform: scaleX(0); }
   to { transform: scaleX(1); }
 }
+@keyframes app-loader-board-fill {
+  0%, 20% { opacity: 0.12; transform: scale(0.75); }
+  45%, 80% { opacity: 0.9; transform: scale(1); }
+  100% { opacity: 0.12; transform: scale(0.75); }
+}
 .app-loader-tile {
   opacity: 0.2;
   animation: app-loader-wave 1.7s ease-in-out infinite;
@@ -135,8 +140,13 @@
   animation: app-loader-fill 2.4s cubic-bezier(0.65, 0, 0.35, 1) both;
   will-change: transform;
 }
+.app-loader-board-cell {
+  opacity: 0.12;
+  animation: app-loader-board-fill 2.2s ease-in-out infinite;
+  will-change: transform, opacity;
+}
 @media (prefers-reduced-motion: reduce) {
-  .app-loader-tile, .app-loader-fade, .app-loader-bar { animation: none; opacity: 1; }
+  .app-loader-tile, .app-loader-fade, .app-loader-bar, .app-loader-board-cell { animation: none; opacity: 1; }
 }
 
 @media (max-width: 767px) {

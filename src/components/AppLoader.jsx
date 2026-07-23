@@ -21,11 +21,14 @@ export default function AppLoader() {
       <p className="app-loader-fade mt-1 text-sm font-medium text-muted-foreground" style={{ animationDelay: "200ms" }}>
         אורט ״הנרי״ רונסון
       </p>
-      <p className="app-loader-fade mt-1 text-xs text-muted-foreground" style={{ animationDelay: "300ms" }}>
-        מסדרים את הלוח…
-      </p>
-      <div className="app-loader-fade mt-7 h-0.5 w-44 overflow-hidden rounded-full bg-muted" style={{ animationDelay: "350ms" }}>
-        <div className="app-loader-bar h-full w-full origin-right rounded-full bg-primary" />
+      <div className="app-loader-fade mt-6 grid w-44 grid-cols-5 gap-1 rounded-lg border border-border bg-card p-2 shadow-sm" style={{ animationDelay: "300ms" }} aria-hidden="true">
+        {Array.from({ length: 15 }, (_, i) => (
+          <span
+            key={i}
+            className="app-loader-board-cell h-2.5 rounded-sm bg-primary"
+            style={{ animationDelay: `${i * 110}ms` }}
+          />
+        ))}
       </div>
     </div>
   );
