@@ -42,7 +42,7 @@ Deno.serve(async req => {
       const soft = checks.flatMap(item => item.warnings); if (soft.length && !overrideReason) return Response.json({ error: "יש להזין סיבה לעקיפת ההתרעות", warnings: unique(soft), requires_reason: true }, { status: 422 });
       assignments = assignments.filter(item => keyOf(item) !== keyOf(slot));
       if (teacherIds.length) assignments.push({ day_of_week: slot.day_of_week, break_type: slot.break_type, station_id: slot.station_id, teacher_ids: teacherIds, teacher_names: teacherIds.map(id => teachers.find(t => t.id === id)?.full_name || ""), override_reason: overrideReason, locked: true });
-    } else if (body.action === "clear_day") assignments = assignments.filter(item => Number(item.day_of_week) !== Number(body.day_of_week));
+    } else if (body.action === "clear_all") assignments = [];
     else if (body.action === "copy_day") {
       const source = Number(body.day_of_week), target = Number(body.target_day), copied = assignments.filter(item => item.day_of_week === source).map(item => ({ ...item, day_of_week: target }));
       const trial = [...assignments.filter(item => item.day_of_week !== target), ...copied], validation = validate(trial, { ...data, assignments: trial }, quotaPolicy), hardConflicts = validation.errors.filter(item => ["conflict", "critical_ineligible_teacher"].includes(item.type));
