@@ -2,6 +2,8 @@ import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
 
 import { mins, keyOf, unique, quotaFor, makeSlot, candidate } from "../../shared/dutySlotLogic.js";
 import { isDutyEligible } from "../../shared/dutyEligibility.js";
+import { buildWeeklyDraft } from "../../shared/weeklyConstraintEngine.js";
+import { loadAll } from "../../shared/entityPaging.js";
 
 Deno.serve(async req => {
   try {
@@ -26,10 +28,10 @@ Deno.serve(async req => {
       const list = teachers.map(teacher => candidate(teacher, slot, data, keyOf(slot))).sort((a, b) => Number(b.available) - Number(a.available) || b.score - a.score || a.full_name.localeCompare(b.full_name, "he")).slice(0, 25);
       return Response.json({ candidates: list, required: slot.required });
     }
-    const [teachers, stations, breaks, schedules, absences, rules, settings] = await Promise.all([e.TeacherProfile.filter({ is_active: true }, "full_name", 500), e.Station.filter({ is_active: true }, "sort_order", 100), e.Break.filter({ is_active: true }, "sort_order", 25), e.WeeklySchedule.filter({ is_active: true }, "start_time", 1000), e.Absence.filter({ status: "approved" }, "-start_date", 500), e.DutyRule.filter({ is_active: true }, "sort_order", 25), e.SystemSettings.list("-updated_date", 1)]);
+    const [teachers, stations, breaks, schedules, absences, rules, settings] = await Promise.all([e.TeacherProfile.filter({ is_active: true }, "full_name", 500), e.Station.filter({ is_active: true }, "sort_order", 100), e.Break.filter({ is_active: true }, "sort_order", 25), loadAll(e.WeeklySchedule, { is_active: true }, "start_time"), e.Absence.filter({ status: "approved" }, "-start_date", 500), e.DutyRule.filter({ is_active: true }, "sort_order", 25), e.SystemSettings.list("-updated_date", 1)]);
     const data = { teachers, stations, breaks, schedules, absences, rules, assignments: template.assignments || [] }, quotaPolicy = settings[0]?.fixed_quota_policy || "warning";
     if (body.expected_updated_date && body.expected_updated_date !== template.updated_date) return Response.json({ error: "הלוח השתנה במקביל. יש לרענן ולנסות שוב.", code: "concurrent_change" }, { status: 409 });
-    let assignments = [...(template.assignments || [])], overrideReason = (body.override_reason || "").trim(), changedSlot = null;
+    let assignments = [...(template.assignments || [])], overrideReason = (body.override_reason || "").trim(), changedSlot = null, draftReport = null;
     if (body.action === "save_slot") {
       const slot = makeSlot(body, stations, breaks), teacherIds = unique(body.teacher_ids); changedSlot = slot;
       const blocked = teacherIds.map(id => teachers.find(t => t.id === id)).find(teacher => !isDutyEligible(teacher));
@@ -39,7 +41,7 @@ Deno.serve(async req => {
       const hard = checks.flatMap(item => item.reasons); if (hard.length) return Response.json({ error: hard.join(" · "), hard_conflict: true }, { status: 422 });
       const soft = checks.flatMap(item => item.warnings); if (soft.length && !overrideReason) return Response.json({ error: "יש להזין סיבה לעקיפת ההתרעות", warnings: unique(soft), requires_reason: true }, { status: 422 });
       assignments = assignments.filter(item => keyOf(item) !== keyOf(slot));
-      if (teacherIds.length) assignments.push({ day_of_week: slot.day_of_week, break_type: slot.break_type, station_id: slot.station_id, teacher_ids: teacherIds, teacher_names: teacherIds.map(id => teachers.find(t => t.id === id)?.full_name || ""), override_reason: overrideReason });
+      if (teacherIds.length) assignments.push({ day_of_week: slot.day_of_week, break_type: slot.break_type, station_id: slot.station_id, teacher_ids: teacherIds, teacher_names: teacherIds.map(id => teachers.find(t => t.id === id)?.full_name || ""), override_reason: overrideReason, locked: true });
     } else if (body.action === "clear_day") assignments = assignments.filter(item => Number(item.day_of_week) !== Number(body.day_of_week));
     else if (body.action === "copy_day") {
       const source = Number(body.day_of_week), target = Number(body.target_day), copied = assignments.filter(item => item.day_of_week === source).map(item => ({ ...item, day_of_week: target }));
@@ -50,10 +52,16 @@ Deno.serve(async req => {
       const validBreaks = new Set(breaks.map(item => item.break_type)), validStations = new Set(stations.map(item => item.id)), validTeachers = new Set(teachers.map(item => item.id));
       const valid = body.assignments.every(item => Number.isInteger(item.day_of_week) && item.day_of_week >= 0 && item.day_of_week <= 4 && validBreaks.has(item.break_type) && validStations.has(item.station_id) && Array.isArray(item.teacher_ids) && item.teacher_ids.every(id => validTeachers.has(id)));
       if (!valid) return Response.json({ error: "קובץ הגיבוי מכיל נתוני שיבוץ לא תקינים" }, { status: 422 });
-      assignments = body.assignments.map(item => ({ day_of_week: item.day_of_week, break_type: item.break_type, station_id: item.station_id, teacher_ids: unique(item.teacher_ids), teacher_names: unique(item.teacher_ids).map(id => teachers.find(teacher => teacher.id === id)?.full_name || ""), override_reason: item.override_reason || "ייבוא מגיבוי" }));
+      assignments = body.assignments.map(item => ({ day_of_week: item.day_of_week, break_type: item.break_type, station_id: item.station_id, teacher_ids: unique(item.teacher_ids), teacher_names: unique(item.teacher_ids).map(id => teachers.find(teacher => teacher.id === id)?.full_name || ""), override_reason: item.override_reason || "ייבוא מגיבוי", locked: true }));
       const importedValidation = validate(assignments, { ...data, assignments }, quotaPolicy);
       if (importedValidation.errors.some(item => ["conflict", "critical_ineligible_teacher"].includes(item.type))) return Response.json({ error: "לא ניתן לייבא שיבוצים הכוללים מורה חסום", validation: importedValidation }, { status: 422 });
-    } else if (body.action === "auto_assign") assignments = autoAssign(data, body.day_of_week);
+    } else if (body.action === "auto_assign") {
+      const locked = assignments.filter(item => item.locked === true || !String(item.override_reason || "").startsWith("שיבוץ אוטומטי"));
+      const generated = buildWeeklyDraft(data, locked);
+      if (generated.blocking.length) return Response.json({ error: "שיבוצים נעולים מפרים כלל חובה. הטיוטה לא נשמרה.", validation: { errors: generated.blocking, warnings: [], isValid: false, summary: { conflicts: generated.blocking.length } }, draft_report: generated.report }, { status: 422 });
+      assignments = generated.assignments;
+      draftReport = generated.report;
+    }
     else if (body.action === "validate") return Response.json(validate(assignments, data, quotaPolicy));
     else if (body.action === "publish") {
       const validation = validate(assignments, data, quotaPolicy);
@@ -70,7 +78,7 @@ Deno.serve(async req => {
       const { assignments: ignoredAssignments, published_assignments: ignoredPublished, ...templateMeta } = template;
       return Response.json({ template: templateMeta, assignment: assignments.find(item => keyOf(item) === keyOf(changedSlot)) || null, slot_key: { day_of_week: changedSlot.day_of_week, break_type: changedSlot.break_type, station_id: changedSlot.station_id } });
     }
-    return Response.json(pack(template, { ...data, assignments }, quotaPolicy));
+    return Response.json(pack(template, { ...data, assignments }, quotaPolicy, draftReport));
   } catch (error) { return Response.json({ error: error.message }, { status: 500 }); }
 });
 
@@ -110,5 +118,5 @@ function validate(assignments, data, quotaPolicy) {
   [...under.map(i => ({ ...i, type: "under_quota", message: `${i.teacher_name}: ${i.count} מתוך ${i.quota}` })), ...over.map(i => ({ ...i, type: "over_quota", message: `${i.teacher_name}: ${i.count} מתוך ${i.quota}` }))].forEach(item => (quotaPolicy === "block" ? errors : warnings).push(item));
   return { errors, warnings, isValid: errors.length === 0, summary: { missing_stations: missing.length, teachers_under_quota: under.length, teachers_over_quota: over.length, conflicts } };
 }
-function pack(template, data, quotaPolicy) { return { template, stations: data.stations.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)), breaks: data.breaks.sort((a, b) => mins(a.start_time) - mins(b.start_time)), validation: validate(template.assignments || [], data, quotaPolicy), quota_policy: quotaPolicy }; }
+function pack(template, data, quotaPolicy, draftReport = null) { return { template, stations: data.stations.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)), breaks: data.breaks.sort((a, b) => mins(a.start_time) - mins(b.start_time)), validation: validate(template.assignments || [], data, quotaPolicy), quota_policy: quotaPolicy, draft_report: draftReport }; }
 async function audit(e, user, actor, id, action, value) { await e.AuditLog.create({ user_id: user.id, user_name: actor.full_name, action, entity_type: "FixedDutyTemplate", entity_id: id, new_value: JSON.stringify(value), timestamp: new Date().toISOString() }); }
