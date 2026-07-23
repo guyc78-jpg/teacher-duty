@@ -1,5 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
-import { dutyEligibility } from "../../shared/dutyEligibility.js";
+import { dutyEligibility, isAutomaticDutyExemptRole } from "../../shared/dutyEligibility.js";
 
 Deno.serve(async req => {
   try {
@@ -11,10 +11,19 @@ Deno.serve(async req => {
     const actor = actors[0];
     if (user.role !== "admin" || actor?.role !== "admin") return Response.json({ error: "Forbidden — נדרשת הרשאת מנהל/ת מערכת" }, { status: 403 });
     const body = await req.json();
-    if (body.action !== "update" || !body.teacher_id || !body.data) return Response.json({ error: "בקשה לא תקינה" }, { status: 400 });
+    if (!body.data || !["create", "update"].includes(body.action)) return Response.json({ error: "בקשה לא תקינה" }, { status: 400 });
+    if (body.action === "create") {
+      const data = { ...body.data };
+      if (isAutomaticDutyExemptRole(data.role)) data.is_exempt = true;
+      const created = await e.TeacherProfile.create(data);
+      return Response.json({ teacher: created, eligibility: dutyEligibility(created), critical_assignments: 0 });
+    }
+    if (!body.teacher_id) return Response.json({ error: "בקשה לא תקינה" }, { status: 400 });
     const before = await e.TeacherProfile.get(body.teacher_id);
     if (!before) return Response.json({ error: "המורה לא נמצא" }, { status: 404 });
-    const updated = await e.TeacherProfile.update(before.id, body.data);
+    const updateData = { ...body.data };
+    if (isAutomaticDutyExemptRole(updateData.role ?? before.role)) updateData.is_exempt = true;
+    const updated = await e.TeacherProfile.update(before.id, updateData);
     const eligibilityChanged = before.role !== updated.role || !!before.is_exempt !== !!updated.is_exempt;
     const eligibility = dutyEligibility(updated);
     let affected = 0;

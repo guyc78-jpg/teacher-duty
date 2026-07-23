@@ -2,6 +2,10 @@ export const DUTY_BLOCK_MESSAGE = "לא ניתן לשבץ מורה זה לתור
 
 const blockedRoles = new Set(["admin", "management", "coordinator"]);
 
+export function isAutomaticDutyExemptRole(role) {
+  return blockedRoles.has(role);
+}
+
 export function dutyBlockLabels(teacher) {
   if (!teacher) return ["מורה לא נמצא"];
   const labels = [];

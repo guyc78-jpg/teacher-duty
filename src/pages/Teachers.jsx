@@ -32,6 +32,10 @@ function splitTeacherName(fullName) {
   return { lastName, firstName: firstNameParts.join(" ") };
 }
 
+function hasAutomaticDutyExemption(role) {
+  return ["admin", "management", "coordinator"].includes(role);
+}
+
 export default function Teachers() {
   const [teacher, setTeacher] = useState(null);
   const [teachers, setTeachers] = useState([]);
@@ -149,7 +153,7 @@ function TeacherModal({ teacher: edit, onClose, onSaved }) {
       if (edit) {
         await manageTeacherProfile({ action: "update", teacher_id: edit.id, data: payload });
       } else {
-        await base44.entities.TeacherProfile.create(payload);
+        await manageTeacherProfile({ action: "create", data: payload });
       }
       onSaved();
     } catch (err) { alert("שגיאה: " + (err.message || "")); }
@@ -195,7 +199,10 @@ function TeacherModal({ teacher: edit, onClose, onSaved }) {
             </div>
             <div>
               <Label>תפקיד</Label>
-              <select aria-label="תפקיד" value={form.role} onChange={e => set("role", e.target.value)} className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm">
+              <select aria-label="תפקיד" value={form.role} onChange={e => {
+                const role = e.target.value;
+                setForm(f => ({ ...f, role, is_exempt: hasAutomaticDutyExemption(role) ? true : f.is_exempt }));
+              }} className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm">
                 <option value="teacher">מורה</option>
                 <option value="homeroom">מחנך/ת</option>
                 <option value="counselor">יועץ/ת</option>
@@ -218,7 +225,7 @@ function TeacherModal({ teacher: edit, onClose, onSaved }) {
           <div className="flex gap-4 flex-wrap">
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_homeroom} onChange={e => set("is_homeroom", e.target.checked)} /> מחנך/ת</label>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_sport_teacher} onChange={e => set("is_sport_teacher", e.target.checked)} /> מורה לספורט</label>
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_exempt} onChange={e => set("is_exempt", e.target.checked)} /> פטור מתורנות</label>
+            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={hasAutomaticDutyExemption(form.role) || form.is_exempt} disabled={hasAutomaticDutyExemption(form.role)} onChange={e => set("is_exempt", e.target.checked)} /> פטור מתורנות{hasAutomaticDutyExemption(form.role) ? " (אוטומטי)" : ""}</label>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_active} onChange={e => set("is_active", e.target.checked)} /> פעיל</label>
           </div>
           <Button onClick={submit} disabled={saving} className="w-full h-11">
