@@ -253,6 +253,11 @@ Deno.serve(async req => {
       return Response.json({ request: updated });
     }
 
+    if (body.action === 'clear_history') {
+      await E.SwapRequest.deleteMany({ initiator_id: teacher.id, status: { $in: ['accepted', 'rejected', 'cancelled', 'expired'] } });
+      return Response.json({ ok: true });
+    }
+
     if (body.action === 'cancel') {
       const matches = await E.SwapRequest.filter({ id: body.swapRequestId });
       const swap = matches[0];

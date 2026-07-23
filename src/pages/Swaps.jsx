@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { getCurrentTeacher } from "@/lib/dutyUtils";
-import { Repeat } from "lucide-react";
+import { Repeat, Trash2 } from "lucide-react";
 import { manageSwapRequest } from "@/functions/manageSwapRequest";
 import { Button } from "@/components/ui/button";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -56,6 +56,15 @@ export default function Swaps() {
   const rejectSwap = swap => act("reject", swap, { title: "דחיית בקשת החלפה", description: "היוזם יקבל עדכון שהבקשה נדחתה.", confirmLabel: "דחיית הבקשה" });
   const cancelSwap = swap => act("cancel", swap, { title: "ביטול בקשת החלפה", description: "הבקשה תבוטל ולא תוצג יותר למורים אחרים.", confirmLabel: "ביטול הבקשה" });
 
+  const clearHistory = async () => {
+    if (actingId) return;
+    if (!(await confirmDialog({ title: "מחיקת היסטוריית החלפות", description: "כל הבקשות שהסתיימו (אושרו, נדחו, בוטלו או פגו) יימחקו לצמיתות. התורנויות עצמן לא יושפעו.", confirmLabel: "מחיקת ההיסטוריה" }))) return;
+    setActingId("history"); setActionError("");
+    try { await manageSwapRequest({ action: "clear_history" }); }
+    catch (requestError) { setActionError(requestError.response?.data?.error || requestError.message || "המחיקה נכשלה"); }
+    finally { setActingId(null); await load(); }
+  };
+
   if (loading) return <div className="flex justify-center py-20"><div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" /></div>;
   if (!teacher) return <p className="py-20 text-center text-muted-foreground">לא נמצא פרופיל מורה.</p>;
 
@@ -96,7 +105,16 @@ export default function Swaps() {
 
       {tab === "history" && (
         <div className="space-y-2">
-          {history.length === 0 ? <EmptyState text="אין היסטוריית החלפות" /> : history.map(swap => <SwapCard key={swap.id} swap={swap} />)}
+          {history.length === 0 ? <EmptyState text="אין היסטוריית החלפות" /> : (
+            <>
+              <div className="flex justify-end">
+                <Button variant="outline" size="sm" onClick={clearHistory} disabled={actingId === "history"} className="text-destructive hover:text-destructive">
+                  <Trash2 className="ml-1 h-4 w-4" /> מחיקת היסטוריה
+                </Button>
+              </div>
+              {history.map(swap => <SwapCard key={swap.id} swap={swap} />)}
+            </>
+          )}
         </div>
       )}
 
