@@ -133,7 +133,7 @@ export default function AdminDashboard() {
         </Link>
         <Link to="/schedule" className="rounded-xl border border-border p-4 bg-card hover:bg-accent text-center">
           <Clock className="w-6 h-6 mx-auto mb-1 text-primary" />
-          <span className="text-sm font-medium">עורך שיבוצים</span>
+          <span className="text-sm font-medium">שיבוץ תורנויות</span>
         </Link>
       </div>
     </div>
