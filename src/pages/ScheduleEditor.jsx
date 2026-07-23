@@ -44,7 +44,7 @@ export default function ScheduleEditor() {
     }));
   };
   const onSaved = saved => { queryClient.setQueryData(queryKey, old => patchSchedulerData(old, saved)); setMessage(saved.scope === "fixed" ? "השינוי נשמר ועודכן גם בלוח הקבוע" : "השינוי נשמר לתאריך זה בלבד"); };
-  const openCreate = (day, brk) => setEditing({ mode: "create", date: day, brk });
+  const openCreate = (day, brk, stationId = "") => setEditing({ mode: "create", date: day, brk, stationId });
   const openEdit = (day, brk, card) => setEditing({ mode: "edit", date: day, brk, stationId: card.stationId, teacherId: card.teacherId });
 
   if (meLoading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin" /></div>;
@@ -70,7 +70,7 @@ export default function ScheduleEditor() {
           </div>
         </>
       ) : (
-        <WeekView dates={visibleDates} sectionsFor={sectionsFor} onAdd={openCreate} onEdit={openEdit} />
+        <WeekView dates={visibleDates} breaks={data.breaks || []} stations={data.stations || []} getSlotIds={getSlotIds} teachersById={teachersById} filters={filters} onAdd={openCreate} onEdit={openEdit} />
       )}
       {editing && <SlotEditDialog context={editing} stations={data?.stations || []} getSlotIds={getSlotIds} onClose={() => setEditing(null)} onSaved={onSaved} />}
     </div>
