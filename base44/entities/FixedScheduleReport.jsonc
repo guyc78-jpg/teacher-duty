@@ -1,0 +1,65 @@
+{
+  "name": "FixedScheduleReport",
+  "type": "object",
+  "properties": {
+    "template_id": {
+      "type": "string",
+      "title": "\u05dc\u05d5\u05d7 \u05e7\u05d1\u05d5\u05e2"
+    },
+    "template_version": {
+      "type": "number",
+      "title": "\u05d2\u05e8\u05e1\u05ea \u05dc\u05d5\u05d7"
+    },
+    "run_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "\u05de\u05d5\u05e2\u05d3 \u05d4\u05e8\u05e6\u05d4"
+    },
+    "week_key": {
+      "type": "string",
+      "format": "date",
+      "title": "\u05e9\u05d1\u05d5\u05e2 \u05d4\u05d4\u05e8\u05e6\u05d4"
+    },
+    "run_by_id": {
+      "type": "string",
+      "title": "\u05de\u05d6\u05d4\u05d4 \u05de\u05e8\u05d9\u05e5"
+    },
+    "run_by_name": {
+      "type": "string",
+      "title": "\u05e9\u05dd \u05de\u05e8\u05d9\u05e5"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "completed",
+        "blocked",
+        "published"
+      ],
+      "default": "completed",
+      "title": "\u05e1\u05d8\u05d8\u05d5\u05e1"
+    },
+    "summary": {
+      "type": "object",
+      "title": "\u05e1\u05d9\u05db\u05d5\u05dd"
+    },
+    "report": {
+      "type": "object",
+      "title": "\u05d3\u05d5\u05d7 \u05de\u05dc\u05d0"
+    }
+  },
+  "required": [
+    "template_id",
+    "run_at",
+    "week_key",
+    "run_by_id",
+    "status",
+    "summary",
+    "report"
+  ],
+  "access": {
+    "read": "admin",
+    "create": "admin",
+    "update": "admin",
+    "delete": "admin"
+  }
+}

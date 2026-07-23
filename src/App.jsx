@@ -23,6 +23,7 @@ const Profile = lazy(() => import('@/pages/Profile'));
 const AdminDashboard = lazy(() => import('@/pages/AdminDashboard'));
 const Teachers = lazy(() => import('@/pages/Teachers'));
 const DutyManagement = lazy(() => import('@/pages/DutyManagement'));
+const Reports = lazy(() => import('@/pages/Reports'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const Onboarding = lazy(() => import('@/pages/Onboarding'));
 const SpecialDays = lazy(() => import('@/pages/SpecialDays'));
@@ -67,6 +68,7 @@ const AuthenticatedApp = () => {
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/teachers" element={<Teachers />} />
             <Route path="/duty-management" element={<DutyManagement />} />
+            <Route path="/reports" element={<Reports />} />
             <Route path="/schedule" element={<Navigate to="/duty-management?tab=actual" replace />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/special-days" element={<SpecialDays />} />

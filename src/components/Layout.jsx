@@ -89,6 +89,7 @@ export default function Layout() {
     { to: "/admin", label: "דשבורד", icon: BarChart3 },
     { to: "/teachers", label: "מורים", icon: Users },
     { to: "/duty-management", label: "ניהול תורנויות", icon: ClipboardList },
+    { to: "/reports", label: "דוחות", icon: BarChart3 },
     { to: "/special-days", label: "ימים מיוחדים", icon: CalendarRange },
     { to: "/settings", label: "הגדרות", icon: Settings }
   ] : [];
@@ -177,7 +178,7 @@ export default function Layout() {
           </div>
         </main>
       </div>
-      <MobileBottomNav unreadCount={unreadCount} />
+      <MobileBottomNav unreadCount={unreadCount} canViewReports={management} />
     </div>
     </ConfirmProvider>
   );

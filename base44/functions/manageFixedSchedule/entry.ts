@@ -11,9 +11,19 @@ Deno.serve(async req => {
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
     const body = await req.json(), e = base44.asServiceRole.entities;
     const [profiles, templates] = await Promise.all([e.TeacherProfile.filter({ user_id: user.id }, "-updated_date", 1), e.FixedDutyTemplate.list("-updated_date", 1)]), actor = profiles[0];
-    if (!actor || actor.role !== "admin") return Response.json({ error: "נדרשת הרשאת מנהל/ת מערכת" }, { status: 403 });
+    const reportAction = ["list_reports", "get_report"].includes(body.action);
+    const canViewReports = actor && ["management", "admin", "coordinator"].includes(actor.role);
+    if (!actor || (reportAction ? !canViewReports : actor.role !== "admin")) return Response.json({ error: reportAction ? "אין הרשאה לצפות בדוחות" : "נדרשת הרשאת מנהל/ת מערכת" }, { status: 403 });
     let template = templates[0];
     if (!template) template = await e.FixedDutyTemplate.create({ name: "לוח תורנויות קבוע", status: "saved", version: 1, assignments: [], published_assignments: [] });
+    if (body.action === "list_reports") {
+      const reports = await e.FixedScheduleReport.list("-run_at", 100);
+      return Response.json({ reports: reports.map(({ report: ignored, ...item }) => item) });
+    }
+    if (body.action === "get_report") {
+      if (!body.report_id) return Response.json({ error: "חסר מזהה דוח" }, { status: 422 });
+      return Response.json({ report: await e.FixedScheduleReport.get(body.report_id) });
+    }
     if (body.action === "load") {
       const [stations, breaks, settings] = await Promise.all([e.Station.filter({ is_active: true }, "sort_order", 100), e.Break.filter({ is_active: true }, "sort_order", 25), e.SystemSettings.list("-updated_date", 1)]);
       const { published_assignments: ignoredPublished, ...templateView } = template;
@@ -58,7 +68,10 @@ Deno.serve(async req => {
     } else if (body.action === "auto_assign") {
       const locked = assignments.filter(item => item.locked === true || !String(item.override_reason || "").startsWith("שיבוץ אוטומטי"));
       const generated = buildWeeklyDraft(data, locked);
-      if (generated.blocking.length) return Response.json({ error: "שיבוצים נעולים מפרים כלל חובה. הטיוטה לא נשמרה.", validation: { errors: generated.blocking, warnings: [], isValid: false, summary: { conflicts: generated.blocking.length } }, draft_report: generated.report }, { status: 422 });
+      if (generated.blocking.length) {
+        const blockedReport = await saveReport(e, template, user, actor, generated.report, "blocked");
+        return Response.json({ error: "שיבוצים נעולים מפרים כלל חובה. הטיוטה לא נשמרה.", validation: { errors: generated.blocking, warnings: [], isValid: false, summary: { conflicts: generated.blocking.length } }, report_id: blockedReport.id }, { status: 422 });
+      }
       assignments = generated.assignments;
       draftReport = generated.report;
     }
@@ -67,12 +80,20 @@ Deno.serve(async req => {
       const validation = validate(assignments, data, quotaPolicy);
       if (validation.errors.length) return Response.json({ error: "לא ניתן לפרסם לוח עם התנגשויות או עמדות חסרות", validation }, { status: 422 });
       if (validation.warnings.length && !overrideReason) return Response.json({ error: "יש להזין סיבה לפרסום עם התרעות", validation, requires_reason: true }, { status: 422 });
-      template = await e.FixedDutyTemplate.update(template.id, { status: "published", version: (template.version || 1) + 1, assignments, published_assignments: assignments, published_at: new Date().toISOString(), published_by: actor.full_name, last_override_reason: overrideReason });
+      const publishedReportId = template.pending_report_id;
+      template = await e.FixedDutyTemplate.update(template.id, { status: "published", version: (template.version || 1) + 1, assignments, published_assignments: assignments, published_at: new Date().toISOString(), published_by: actor.full_name, last_override_reason: overrideReason, pending_report_id: null, pending_report_summary: null });
+      if (publishedReportId) await e.FixedScheduleReport.update(publishedReportId, { status: "published" });
       await audit(e, user, actor, template.id, "publish_fixed_schedule", { version: template.version, reason: overrideReason });
       return Response.json(pack(template, { ...data, assignments }, quotaPolicy));
     } else if (body.action !== "save") return Response.json({ error: "פעולה לא מוכרת" }, { status: 400 });
     template = await e.FixedDutyTemplate.update(template.id, { status: "saved", version: (template.version || 1) + 1, assignments, last_override_reason: overrideReason });
     template = await e.FixedDutyTemplate.get(template.id);
+    if (body.action === "auto_assign" && draftReport) {
+      const savedReport = await saveReport(e, template, user, actor, draftReport, "completed");
+      const summary = { assigned: draftReport.summary.assigned, missing: draftReport.summary.missing, deviations: draftReport.under_quota.length + draftReport.over_quota.length, not_assigned: draftReport.not_assigned.length };
+      template = await e.FixedDutyTemplate.update(template.id, { pending_report_id: savedReport.id, pending_report_summary: summary });
+      template = await e.FixedDutyTemplate.get(template.id);
+    }
     await audit(e, user, actor, template.id, body.action, { day: body.day_of_week, target: body.target_day });
     if (body.action === "save_slot") {
       const { assignments: ignoredAssignments, published_assignments: ignoredPublished, ...templateMeta } = template;
@@ -119,4 +140,8 @@ function validate(assignments, data, quotaPolicy) {
   return { errors, warnings, isValid: errors.length === 0, summary: { missing_stations: missing.length, teachers_under_quota: under.length, teachers_over_quota: over.length, conflicts } };
 }
 function pack(template, data, quotaPolicy, draftReport = null) { return { template, stations: data.stations.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)), breaks: data.breaks.sort((a, b) => mins(a.start_time) - mins(b.start_time)), validation: validate(template.assignments || [], data, quotaPolicy), quota_policy: quotaPolicy, draft_report: draftReport }; }
+async function saveReport(e, template, user, actor, report, status) {
+  const runAt = new Date(), sunday = new Date(runAt); sunday.setUTCDate(runAt.getUTCDate() - runAt.getUTCDay());
+  return e.FixedScheduleReport.create({ template_id: template.id, template_version: template.version, run_at: runAt.toISOString(), week_key: sunday.toISOString().slice(0, 10), run_by_id: user.id, run_by_name: actor.full_name, status, summary: report.summary, report });
+}
 async function audit(e, user, actor, id, action, value) { await e.AuditLog.create({ user_id: user.id, user_name: actor.full_name, action, entity_type: "FixedDutyTemplate", entity_id: id, new_value: JSON.stringify(value), timestamp: new Date().toISOString() }); }
