@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { getCurrentTeacher, DIVISION_LABELS, isManagement } from "@/lib/dutyUtils";
 import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import CloseButton from "@/components/ui/close-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +27,7 @@ export default function Teachers() {
   const [editing, setEditing] = useState(null);
   const [selected, setSelected] = useState(null);
   const [filters, setFilters] = useState({ division: "", subject: "", exempt: "", status: "" });
+  const confirmDialog = useConfirm();
 
   const load = useCallback(async () => {
     const t = await getCurrentTeacher();
@@ -42,7 +44,7 @@ export default function Teachers() {
   const isAdmin = teacher?.role === "admin";
 
   const deleteTeacher = async (t) => {
-    if (!confirm(`למחוק את ${t.full_name} לצמיתות? פעולה זו תסיר גם את מערכת השעות שלו.`)) return;
+    if (!(await confirmDialog({ title: `מחיקת ${t.full_name}`, description: "המורה יימחק לצמיתות יחד עם מערכת השעות שלו. לא ניתן לשחזר פעולה זו.", confirmLabel: "מחיקת מורה" }))) return;
     try {
       await base44.entities.WeeklySchedule.deleteMany({ teacher_id: t.id });
       await base44.entities.TeacherProfile.delete(t.id);

@@ -8,6 +8,7 @@ import CloseButton from "@/components/ui/close-button";
 import PushToggle from "@/components/PushToggle";
 import { ROLE_LABELS } from "@/components/onboarding/onboardingConstants";
 import { useAuth } from "@/lib/AuthContext";
+import { ConfirmProvider } from "@/components/ui/confirm-dialog";
 
 export default function Layout() {
   const [teacher, setTeacher] = useState(null);
@@ -99,6 +100,7 @@ export default function Layout() {
     : teacherNav.filter(item => item.to === "/incidents" || item.to === "/profile");
 
   return (
+    <ConfirmProvider>
     <div className="mobile-compact min-h-screen bg-background">
       {/* Top bar - mobile */}
       <header className="lg:hidden sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
@@ -178,6 +180,7 @@ export default function Layout() {
       </div>
       <MobileBottomNav unreadCount={unreadCount} />
     </div>
+    </ConfirmProvider>
   );
 }
 

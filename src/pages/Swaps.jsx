@@ -4,6 +4,7 @@ import { getCurrentTeacher, formatDateWithDay, formatTimeRange, isSchoolDay, BRE
 import { Clock, MapPin, Repeat, ArrowRightLeft, X } from "lucide-react";
 import { manageSwapRequest } from "@/functions/manageSwapRequest";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import CreateSwapModal from "@/components/swaps/CreateSwapModal";
 
 export default function Swaps() {
@@ -16,6 +17,7 @@ export default function Swaps() {
   const [tab, setTab] = useState("mine"); // mine | open | create | history
   const [showCreate, setShowCreate] = useState(false);
   const [acceptingId, setAcceptingId] = useState(null);
+  const confirmDialog = useConfirm();
 
   const load = useCallback(async () => {
     const t = await getCurrentTeacher();
@@ -45,7 +47,7 @@ export default function Swaps() {
 
   const acceptSwap = async (swap) => {
     if (!teacher || acceptingId) return;
-    if (!confirm("לאשר קבלת החלפה זו?")) return;
+    if (!(await confirmDialog({ title: "קבלת החלפה", description: "התורנות תועבר אליך ותופיע ברשימת התורנויות שלך.", confirmLabel: "קבלת החלפה", variant: "default" }))) return;
     setAcceptingId(swap.id);
     try {
       await manageSwapRequest({ action: "accept", swapRequestId: swap.id });
@@ -57,7 +59,7 @@ export default function Swaps() {
   };
 
   const cancelSwap = async (swap) => {
-    if (!confirm("לבטל בקשה זו?")) return;
+    if (!(await confirmDialog({ title: "ביטול בקשת החלפה", description: "הבקשה תבוטל ולא תוצג יותר למורים אחרים.", confirmLabel: "ביטול בקשה" }))) return;
     try {
       await manageSwapRequest({ action: "cancel", swapRequestId: swap.id });
       await load();
