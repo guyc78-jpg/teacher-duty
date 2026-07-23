@@ -8,7 +8,7 @@ export default function TeacherRow({ teacher, onOpen, onDelete }) {
       tabIndex={0}
       onClick={() => onOpen(teacher)}
       onKeyDown={e => { if (e.key === "Enter") onOpen(teacher); }}
-      className="grid w-full cursor-pointer grid-cols-[minmax(0,1fr)_minmax(5rem,0.7fr)_4rem_auto] items-center gap-2 border-b border-border px-3 py-2.5 text-right transition-colors last:border-b-0 hover:bg-muted/50 sm:grid-cols-[minmax(0,1.3fr)_minmax(7rem,1fr)_6rem_5rem_auto]"
+      className="grid w-full cursor-pointer grid-cols-[minmax(0,1fr)_minmax(4rem,0.65fr)_2.5rem_3.5rem_2rem] items-center gap-2 border-b border-border px-3 py-2.5 text-right transition-colors last:border-b-0 hover:bg-muted/50 sm:grid-cols-[minmax(0,1.3fr)_minmax(7rem,1fr)_6rem_5rem_auto]"
     >
       <span className="truncate text-sm font-semibold">{teacher.full_name}</span>
       <span className="truncate text-xs text-muted-foreground sm:text-sm">{teacher.subject || "—"}</span>
@@ -21,7 +21,7 @@ export default function TeacherRow({ teacher, onOpen, onDelete }) {
           <button
             aria-label={`מחיקת ${teacher.full_name}`}
             onClick={e => { e.stopPropagation(); onDelete(teacher); }}
-            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+            className="rounded-md p-1.5 text-destructive transition-colors hover:bg-destructive/10 hover:text-destructive"
           >
             <Trash2 className="h-4 w-4" />
           </button>
