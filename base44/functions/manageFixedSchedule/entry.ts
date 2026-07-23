@@ -47,6 +47,12 @@ Deno.serve(async req => {
       const source = Number(body.day_of_week), target = Number(body.target_day), copied = assignments.filter(item => item.day_of_week === source).map(item => ({ ...item, day_of_week: target }));
       const trial = [...assignments.filter(item => item.day_of_week !== target), ...copied], validation = validate(trial, { ...data, assignments: trial }, quotaPolicy), hardConflicts = validation.errors.filter(item => item.type === "conflict");
       if (hardConflicts.length) return Response.json({ error: "לא ניתן להעתיק: קיימות התנגשויות קשיחות", validation }, { status: 422 }); assignments = trial;
+    } else if (body.action === "import_assignments") {
+      if (!Array.isArray(body.assignments)) return Response.json({ error: "קובץ הגיבוי אינו תקין" }, { status: 422 });
+      const validBreaks = new Set(breaks.map(item => item.break_type)), validStations = new Set(stations.map(item => item.id)), validTeachers = new Set(teachers.map(item => item.id));
+      const valid = body.assignments.every(item => Number.isInteger(item.day_of_week) && item.day_of_week >= 0 && item.day_of_week <= 4 && validBreaks.has(item.break_type) && validStations.has(item.station_id) && Array.isArray(item.teacher_ids) && item.teacher_ids.every(id => validTeachers.has(id)));
+      if (!valid) return Response.json({ error: "קובץ הגיבוי מכיל נתוני שיבוץ לא תקינים" }, { status: 422 });
+      assignments = body.assignments.map(item => ({ day_of_week: item.day_of_week, break_type: item.break_type, station_id: item.station_id, teacher_ids: unique(item.teacher_ids), teacher_names: unique(item.teacher_ids).map(id => teachers.find(teacher => teacher.id === id)?.full_name || ""), override_reason: item.override_reason || "ייבוא מגיבוי" }));
     } else if (body.action === "auto_assign") assignments = autoAssign(data);
     else if (body.action === "validate") return Response.json(validate(assignments, data, quotaPolicy));
     else if (body.action === "publish") {
