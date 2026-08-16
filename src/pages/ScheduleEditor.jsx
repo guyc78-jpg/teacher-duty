@@ -23,7 +23,7 @@ export default function ScheduleEditor({ embedded = false }) {
   const [message, setMessage] = useState("");
   const visibleDates = view === "day" ? [date] : weekDates(week);
   const queryKey = ["dutyScheduler", visibleDates.join("|")];
-  const { data, isLoading } = useQuery({ queryKey, queryFn: () => manageDailySchedule({ action: "load", dates: visibleDates }).then(result => result.data), enabled: !!me && isManagement(me), staleTime: 0, refetchOnMount: "always" });
+  const { data, isLoading } = useQuery({ queryKey, queryFn: () => manageDailySchedule({ action: "load", dates: visibleDates }).then(result => result.data), enabled: !!me && isManagement(me), staleTime: 30_000, refetchOnMount: false, placeholderData: previous => previous });
   const teachersById = useMemo(() => new Map((data?.teachers || []).map(item => [item.id, item])), [data?.teachers]);
 
   const getSlotIds = (day, breakType, sid) => {
