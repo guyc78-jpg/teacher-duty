@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Outlet, NavLink, useNavigate, Navigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { getCurrentTeacher, isManagement, isAdmin } from "@/lib/dutyUtils";
+import { getCurrentTeacher, isManagement } from "@/lib/dutyUtils";
 import { Menu, Bell, Calendar, CalendarRange, Users, User, LogOut, Settings, ClipboardList, BarChart3, AlertTriangle, Repeat, Home as HomeIcon, ShieldCheck, Moon, Sun } from "lucide-react";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import CloseButton from "@/components/ui/close-button";
