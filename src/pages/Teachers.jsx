@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { manageTeacherProfile } from "@/functions/manageTeacherProfile";
-import { getCurrentTeacher, DIVISION_LABELS, isManagement } from "@/lib/dutyUtils";
+import { getCurrentTeacher, isManagement } from "@/lib/dutyUtils";
 import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -64,8 +64,7 @@ export default function Teachers() {
   const deleteTeacher = async (t) => {
     if (!(await confirmDialog({ title: `מחיקת ${t.full_name}`, description: "המורה יימחק לצמיתות יחד עם מערכת השעות שלו. לא ניתן לשחזר פעולה זו.", confirmLabel: "מחיקת מורה" }))) return;
     try {
-      await base44.entities.WeeklySchedule.deleteMany({ teacher_id: t.id });
-      await base44.entities.TeacherProfile.delete(t.id);
+      await manageTeacherProfile({ action: "delete", teacher_id: t.id });
       setSelected(null);
       load();
     } catch (err) { alert("שגיאה: " + (err.message || "")); }
@@ -114,7 +113,7 @@ export default function Teachers() {
       </div>
 
       <div className="space-y-2 overflow-visible pt-1">
-        {filtered.map((t, index) => <TeacherRow key={t.id} teacher={t} number={index + 1} onOpen={setSelected} onDelete={isAdmin ? deleteTeacher : undefined} />)}
+        {filtered.map((t, index) => <TeacherRow key={t.id} teacher={t} number={index + 1} onOpen={setSelected} onDelete={isAdmin && t.id !== teacher.id ? deleteTeacher : undefined} />)}
         {filtered.length === 0 && <p className="py-10 text-center text-sm text-muted-foreground">לא נמצאו מורים התואמים לסינון.</p>}
       </div>
 
@@ -123,18 +122,18 @@ export default function Teachers() {
           teacher={selected}
           onClose={() => setSelected(null)}
           onEdit={() => { setEditing(selected); setSelected(null); setShowAdd(true); }}
-          onDelete={isAdmin ? () => deleteTeacher(selected) : undefined}
+          onDelete={isAdmin && selected.id !== teacher.id ? () => deleteTeacher(selected) : undefined}
           canEdit={isAdmin}
         />
       )}
       {showAdd && (
-        <TeacherModal teacher={editing} onClose={() => setShowAdd(false)} onSaved={() => { setShowAdd(false); load(); }} />
+        <TeacherModal teacher={editing} currentTeacherId={teacher.id} onClose={() => setShowAdd(false)} onSaved={() => { setShowAdd(false); load(); }} />
       )}
     </div>
   );
 }
 
-function TeacherModal({ teacher: edit, onClose, onSaved }) {
+function TeacherModal({ teacher: edit, currentTeacherId, onClose, onSaved }) {
   const initialName = splitTeacherName(edit?.full_name);
   const [lastName, setLastName] = useState(initialName.lastName);
   const [firstName, setFirstName] = useState(initialName.firstName);
@@ -199,10 +198,10 @@ function TeacherModal({ teacher: edit, onClose, onSaved }) {
             </div>
             <div>
               <Label>תפקיד</Label>
-              <select aria-label="תפקיד" value={form.role} onChange={e => {
+              <select aria-label="תפקיד" value={form.role} disabled={edit?.id === currentTeacherId} onChange={e => {
                 const role = e.target.value;
                 setForm(f => ({ ...f, role, is_exempt: hasAutomaticDutyExemption(role) ? true : f.is_exempt }));
-              }} className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm">
+              }} className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm disabled:cursor-not-allowed disabled:opacity-60">
                 <option value="teacher">מורה</option>
                 <option value="homeroom">מחנך/ת</option>
                 <option value="counselor">יועץ/ת</option>
