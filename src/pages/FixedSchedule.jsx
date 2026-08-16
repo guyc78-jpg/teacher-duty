@@ -14,7 +14,7 @@ const queryKey = ["fixed-schedule"];
 export default function FixedSchedule({ embedded = false }) {
   const queryClient = useQueryClient();
   const confirmDialog = useConfirm();
-  const { data, isLoading, error } = useQuery({ queryKey, queryFn: () => manageFixedSchedule({ action: "load" }).then(response => response.data), staleTime: 0, refetchOnMount: "always" });
+  const { data, isLoading, error } = useQuery({ queryKey, queryFn: () => manageFixedSchedule({ action: "load" }).then(response => response.data), staleTime: 60_000, refetchOnMount: false });
   const requestedDay = Number(new URLSearchParams(window.location.search).get("day"));
   const [day, setDay] = useState(requestedDay >= 0 && requestedDay <= 4 ? requestedDay : 0), [editing, setEditing] = useState(null), [review, setReview] = useState(false), [busy, setBusy] = useState(false), [message, setMessage] = useState("");
   const setData = updater => queryClient.setQueryData(queryKey, updater);
