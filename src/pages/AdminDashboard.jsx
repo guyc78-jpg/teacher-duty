@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { getCurrentTeacher, formatDateWithDay, formatTimeRange, todayISO, isSchoolDay, BREAK_TYPES, STATUS_LABELS, isManagement } from "@/lib/dutyUtils";
-import { Users, AlertTriangle, Repeat, Clock, MapPin, CheckCircle, XCircle, Eye } from "lucide-react";
+import { Users, AlertTriangle, Repeat, Clock, CheckCircle, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 import AdminAlerts from "@/components/admin/AdminAlerts";
 import AdminSummaryCard from "@/components/admin/AdminSummaryCard";
