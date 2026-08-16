@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
-import { getCurrentTeacher, formatDateWithDay, formatTimeRange, todayISO, isSchoolDay, BREAK_TYPES, STATUS_LABELS, HEBREW_DAYS, schoolDaysInRange, toISODate } from "@/lib/dutyUtils";
+import { getCurrentTeacher, formatDateWithDay, formatTimeRange, todayISO, isSchoolDay, BREAK_TYPES, STATUS_LABELS, toISODate } from "@/lib/dutyUtils";
 import { Clock, MapPin, Calendar, CheckCircle, Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
